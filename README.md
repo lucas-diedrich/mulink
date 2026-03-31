@@ -45,7 +45,9 @@ If you found a bug, please use the [issue tracker][].
 
 ## Citation
 
-> t.b.a
+This project was started at the [scverse proteomics hackathon in Berlin 2026](https://github.com/scverse/202603_hackathon_proteomics).
+
+> scverse proteomics working group 2026. mulink.
 
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/

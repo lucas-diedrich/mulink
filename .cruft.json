@@ -1,0 +1,43 @@
+{
+  "template": "https://github.com/scverse/cookiecutter-scverse",
+  "commit": "1da1d71043735a63d87f13e16caf5d9b90b3ba56",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "mulink",
+      "package_name": "mulink",
+      "project_description": "Links between modalities in mudata",
+      "author_full_name": "scverse-proteomics",
+      "author_email": "diedrich@biochem.mpg.de",
+      "github_user": "lucas-diedrich",
+      "github_repo": "mulink",
+      "license": "MIT License",
+      "ide_integration": true,
+      "_copy_without_render": [
+        ".github/workflows/build.yaml",
+        ".github/workflows/test.yaml",
+        "docs/_templates/autosummary/**.rst"
+      ],
+      "_exclude_on_template_update": [
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md",
+        "docs/api.md",
+        "docs/index.md",
+        "docs/notebooks/example.ipynb",
+        "docs/references.bib",
+        "docs/references.md",
+        "src/**",
+        "tests/**"
+      ],
+      "_render_devdocs": false,
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_template": "https://github.com/scverse/cookiecutter-scverse",
+      "_commit": "1da1d71043735a63d87f13e16caf5d9b90b3ba56"
+    }
+  },
+  "directory": null
+}

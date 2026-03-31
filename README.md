@@ -45,7 +45,7 @@ If you found a bug, please use the [issue tracker][].
 
 ## Citation
 
-This project was started at the [scverse proteomics hackathon in Berlin 2026](https://github.com/scverse/202603_hackathon_proteomics).
+This project was started at the [scverse proteomics hackathon in Berlin 2026](https://github.com/scverse/202603_hackathon_proteomics). Comparable features are implemented in the [QFeatures](https://rformassspectrometry.github.io/QFeatures/) package in R.
 
 > scverse proteomics working group 2026. mulink.
 

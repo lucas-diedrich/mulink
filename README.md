@@ -10,8 +10,8 @@ Links between modalities in mudata
 
 ## Getting started
 
-Please refer to the [documentation][],
-in particular, the [API documentation][].
+<!-- Please refer to the [documentation][],
+in particular, the [API documentation][]. -->
 
 ## Installation
 
@@ -40,7 +40,7 @@ See the [changelog][].
 
 ## Contact
 
-For questions and help requests, you can reach out in the [scverse discourse][].
+<!-- For questions and help requests, you can reach out in the [scverse discourse][]. -->
 If you found a bug, please use the [issue tracker][].
 
 ## Citation

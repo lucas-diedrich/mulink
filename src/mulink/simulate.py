@@ -1,4 +1,4 @@
-"""Simulate artificial mudata"""
+"""Simulate artificial mudata with explicit feature relationship"""
 
 from itertools import product
 

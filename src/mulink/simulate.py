@@ -106,7 +106,7 @@ def hierarchical_mudata(
         If `None`, the feature relationship between different levels is represented by a tree.
         This means that a feature from level n+1 maps to exactly one feature in level n
     extra_edge_levels
-        Constrain the addition of extra edges to these levels of the final mudata object.
+        Constrain the addition of extra edges to these levels of the final mudata object (starting at 0).
         Must not contain the highest level, as these features do not contain additional connections.
     transitive_closure
         Whether to return a graph where features that are indirectly linked are connected with an
@@ -125,8 +125,8 @@ def hierarchical_mudata(
     with `mod{idx}`. The feature mapping is added as adjacency matrix with in the `.varp` attribute as `varp_key`.
     In the matrix, entry (i, j) corresponds to a directed edge from feature i to feature j.
     """
-    if any(edge_level > n_mod - 1 for edge_level in extra_edge_levels):
-        raise ValueError("extra_edge_levels must only contain levels from (0..n_mod-1)")
+    if extra_edge_levels is not None and any(edge_level >= n_mod - 1 for edge_level in extra_edge_levels):
+        raise ValueError("extra_edge_levels must only contain levels from (0..n_mod-2)")
 
     rng = np.random.default_rng(seed=random_state)
 

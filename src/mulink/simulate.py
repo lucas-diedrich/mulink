@@ -45,7 +45,10 @@ def _generate_dag(
 
     Returns
     -------
-    A directed acyclic graph
+    dag
+        A directed acyclic graph
+    n_nodes_per_level
+        Mapping between feature level and number of nodes in this level
     """
     rng = rng if rng is not None else np.random.default_rng()
 
@@ -114,6 +117,13 @@ def hierarchical_mudata(
         object
     random_state
         Random state for the simulation
+
+
+    Returns
+    -------
+    A :class:`mudata.MuData` object with explicit feature mapping. The individual modalities/feature-levels are indicated
+    with `mod{idx}`. The feature mapping is added as adjacency matrix with in the `.varp` attribute as `varp_key`.
+    In the matrix, entry (i, j) corresponds to a directed edge from feature i to feature j.
     """
     if any(edge_level > n_mod - 1 for edge_level in extra_edge_levels):
         raise ValueError("extra_edge_levels must only contain levels from (0..n_mod-1)")

@@ -40,8 +40,8 @@ def _generate_dag(
         Whether to return a graph where vertices that are indirectly linked are connected with an
         explicit edge.
         e.g. for the graph A --> B --> C, the connection A --> C will also be added
-    seed
-        Random seed (for edge addition).
+    rng
+        Random number generator instance.
 
     Returns
     -------

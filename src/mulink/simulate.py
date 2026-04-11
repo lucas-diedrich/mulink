@@ -6,6 +6,7 @@ import anndata as ad
 import mudata as md
 import networkx as nx
 import numpy as np
+import pandas as pd
 from numpy.random import Generator
 
 
@@ -73,11 +74,16 @@ def _generate_dag(
     return dag, n_nodes_per_level
 
 
-def _generate_anndata(n_obs: int, n_var: int, rng: Generator | None = None) -> ad.AnnData:
+def _generate_anndata(
+    n_obs: int, n_var: int, var_prefix: str | None = None, rng: Generator | None = None
+) -> ad.AnnData:
     """Generate an anndata object with random values"""
     rng = rng if rng is not None else np.random.default_rng()
 
-    return ad.AnnData(X=rng.random(size=(n_obs, n_var)))
+    # Make variables unique
+    var = pd.DataFrame(index=[f"{var_prefix}{idx}" for idx in range(n_var)]) if var_prefix is not None else None
+
+    return ad.AnnData(X=rng.random(size=(n_obs, n_var)), var=var)
 
 
 def hierarchical_mudata(
@@ -141,7 +147,8 @@ def hierarchical_mudata(
 
     mdata = md.MuData(
         data={
-            f"mod{mod}": _generate_anndata(n_obs=n_obs, n_var=n_nodes_per_level[mod], rng=rng) for mod in range(n_mod)
+            f"mod{mod}": _generate_anndata(n_obs=n_obs, n_var=n_nodes_per_level[mod], var_prefix=f"mod{mod}-", rng=rng)
+            for mod in range(n_mod)
         },
     )
 

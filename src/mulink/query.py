@@ -1,10 +1,12 @@
 """Query an adjacency matrix"""
 
+from collections.abc import Iterable
+
 import numpy as np
 from scipy.sparse import csr_matrix
 
 
-def get_descendants(vertices: int | list[int], adjacency_matrix: csr_matrix) -> np.ndarray:
+def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
     """Get all direct descendants for a feature or a list of features
 
     A direct descendants represents a vertix that can be reached by a single hop along the
@@ -31,7 +33,7 @@ def get_descendants(vertices: int | list[int], adjacency_matrix: csr_matrix) -> 
     return np.unique(cols)
 
 
-def get_ancestors(vertices: int | list[int], adjacency_matrix: csr_matrix) -> np.ndarray:
+def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
     """Get all direct ancestors for a feature or a list of features
 
     A direct ancestors represents a vertix that can be reached by a single hop against

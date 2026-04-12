@@ -7,6 +7,7 @@
 :maxdepth: 1
 
 api.md
+rfc.md
 changelog.md
 contributing.md
 references.md

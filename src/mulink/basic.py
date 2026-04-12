@@ -17,7 +17,6 @@ class MuLink:
         """Add a feature link to mudata"""
         self._obj.varp[key] = csr_matrix(link)
 
-    @property
     def link(self, key: str = "feature_mapping") -> pd.DataFrame:
         """Returns the feature mapping matrix of the current object
 

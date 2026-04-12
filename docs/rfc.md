@@ -241,6 +241,7 @@ We allow to optionally keep or remove the query components from the subset with 
 
 - Add self referring edges to features: This would remove the flexibility of either including or excluding the nodes or would require additional logic to enable this.
 Additionally, the resulting graph structure would contain cycles, which reduces the usability of the graph itself.
+The semantics of self-referring edges are not clear in many contexts (e.g. feature aggregation, ...)
 
 ```mermaid
 flowchart TD

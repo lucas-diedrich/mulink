@@ -29,6 +29,9 @@ version = info["Version"]
 urls = dict(pu.split(", ") for pu in info.get_all("Project-URL"))
 repository_url = urls["Source"]
 
+html_logo = "_static/logo/logo.png"
+
+
 # The full version, including alpha/beta/rc tags
 release = info["Version"]
 

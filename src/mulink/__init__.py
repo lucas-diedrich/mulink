@@ -1,8 +1,7 @@
 from importlib.metadata import version
 
-from . import simulate
+from . import basic, simulate
 
 __version__ = version("mulink")
 
-
-__all__ = ["simulate"]
+__all__ = ["basic", "simulate"]

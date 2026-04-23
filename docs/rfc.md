@@ -203,7 +203,7 @@ If only explicit mappings between a subset of modalities are desired, the rest o
 
 ### Querying
 
-Given the directed graph structure, we enable querying of **direct** [descendant nodes](#descendant--ancestor) and [ancestor nodes]((#descendant--ancestor)).
+Given the directed graph structure, we enable querying of **direct** [descendant nodes](#descendant--ancestor) and [ancestor nodes](#descendant--ancestor).
 
 This returns a mudata object containing all observations but only the relevant subset of features.
 

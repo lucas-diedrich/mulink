@@ -45,7 +45,19 @@ class MuLink:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct descendants of features"""
+        """Get direct descendants of features
+
+        Examples
+        --------
+
+        .. code-block:: python
+
+            mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
+
+            mdata.link.query_descendants(features="mod0-0")
+            mdata.link.query_descendants(features=["mod0-0", "mod0-1"])
+
+        """
         return self._query(
             query_func=get_descendants,
             features=features,
@@ -60,7 +72,19 @@ class MuLink:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct ancestors of features"""
+        """Get direct ancestors of features
+
+        Examples
+        --------
+
+        .. code-block:: python
+
+            mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
+
+            mdata.link.query_ancestors(features="mod2-0")
+            mdata.link.query_ancestors(features=["mod2-0", "mod2-1"])
+
+        """
         return self._query(
             query_func=get_ancestors,
             features=features,

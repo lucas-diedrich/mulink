@@ -8,6 +8,7 @@
 
 api.md
 rfc.md
+notebooks/example.ipynb
 changelog.md
 contributing.md
 references.md

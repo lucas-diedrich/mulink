@@ -58,6 +58,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxcontrib.bibtex",
     "sphinxcontrib.katex",
+    "sphinxcontrib.mermaid",
     "sphinx_autodoc_typehints",
     "sphinx_design",
     "IPython.sphinxext.ipython_console_highlighting",
@@ -83,6 +84,7 @@ myst_enable_extensions = [
     "html_admonition",
 ]
 myst_url_schemes = ("http", "https", "mailto")
+myst_fence_as_directive = ["mermaid"]
 nb_output_stderr = "remove"
 nb_execution_mode = "off"
 nb_merge_streams = True

@@ -55,6 +55,7 @@ doc = [
   "sphinx-design",
   "sphinxcontrib-bibtex>=1",
   "sphinxcontrib-katex",
+  "sphinxcontrib-mermaid",
   "sphinxext-opengraph",
 ]
 

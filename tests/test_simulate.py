@@ -20,19 +20,21 @@ def test__generate_anndata(n_obs: int, n_var: int) -> None:
 
 @pytest.mark.parametrize("transitive_closure", [True, False])
 @pytest.mark.parametrize("extra_edge_probability", [None, 0, 0.1, 0.9])
-@pytest.mark.parametrize("n_vertices", [1, 2])
+@pytest.mark.parametrize("min_edges", [1, 2, 3])
+@pytest.mark.parametrize("n_vertices", [1, 3, 10])
 @pytest.mark.parametrize("n_level", [1, 2, 3])
 def test__generate_dag(
-    n_vertices: int, n_level: int, extra_edge_probability: float | None, transitive_closure: bool
+    n_vertices: int, min_edges: int, n_level: int, extra_edge_probability: float | None, transitive_closure: bool
 ) -> None:
     dag, n_nodes_per_level = _generate_dag(
         n_level=n_level,
         n_vertices=n_vertices,
+        min_edges=min_edges,
         extra_edge_probability=extra_edge_probability,
         transitive_closure=transitive_closure,
     )
 
-    expected_nodes_per_level = {level: n_vertices ** (level + 1) for level in range(n_level)}
+    expected_nodes_per_level = {level: n_vertices * min_edges**level for level in range(n_level)}
 
     assert isinstance(dag, nx.DiGraph)
     assert nx.is_directed_acyclic_graph(dag)
@@ -41,13 +43,14 @@ def test__generate_dag(
 
 @pytest.mark.parametrize("linkage_key", ["feature_mapping", "test"])
 @pytest.mark.parametrize("n_obs", [5])
-@pytest.mark.parametrize("n_vertices", [1, 3])
+@pytest.mark.parametrize("min_edges", [1, 2, 3])
+@pytest.mark.parametrize("n_vertices", [1, 3, 10])
 @pytest.mark.parametrize("n_mod", [1, 3])
-def test_hierarchical_mudata(n_mod: int, n_vertices: int, n_obs: int, linkage_key: str) -> None:
-    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, linkage_key=linkage_key)
+def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs: int, linkage_key: str) -> None:
+    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, min_edges=min_edges, linkage_key=linkage_key)
 
     expected_modality_names = {f"mod{idx}" for idx in range(n_mod)}
-    expected_n_vars = sum(n_vertices ** (mod + 1) for mod in range(n_mod))
+    expected_n_vars = sum(n_vertices * min_edges**mod for mod in range(n_mod))
 
     assert isinstance(mdata, md.MuData)
     assert set(mdata.mod.keys()) == expected_modality_names

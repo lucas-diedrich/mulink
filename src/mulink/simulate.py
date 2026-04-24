@@ -14,6 +14,7 @@ from numpy.random import Generator
 def _generate_dag(
     n_level: int = 3,
     n_vertices: int = 2,
+    min_edges: int = 2,
     *,
     extra_edge_probability: float | None = 0.2,
     extra_edge_levels: list[int] | None = None,
@@ -31,7 +32,9 @@ def _generate_dag(
     n_level
         Number of levels
     n_vertices
-        Number of vertices in lowest level
+        Number of vertices at lowest level
+    min_edges
+        Minimum number of edges between vertices
     extra_edge_probability
         Probability of drawing an extra edge between vertices from two adjacent topological generations.
         If `None`, does not add extra edges.
@@ -54,9 +57,13 @@ def _generate_dag(
     """
     rng = rng if rng is not None else np.random.default_rng()
 
-    dag = nx.balanced_tree(r=n_vertices, h=n_level, create_using=nx.DiGraph)
-    # Remove root node (extra level)
-    dag.remove_node(0)
+    dag = nx.DiGraph()
+    subtrees = []
+    for _ in range(n_vertices):
+        subtree = nx.balanced_tree(r=min_edges, h=(n_level - 1), create_using=nx.DiGraph)
+        subtrees.append(subtree)
+
+    dag = nx.union_all(subtrees, rename=(f"{idx}-" for idx in range(n_vertices)))
 
     level_to_nodes = dict(enumerate(nx.topological_generations(dag)))
 
@@ -92,6 +99,7 @@ def hierarchical_mudata(
     *,
     n_obs: int = 5,
     n_vertices: int = 2,
+    min_edges=2,
     extra_edge_probability: float | None = 0.2,
     extra_edge_levels: list[int] | None = None,
     transitive_closure: bool = True,
@@ -109,6 +117,8 @@ def hierarchical_mudata(
         Number of observations in the object
     n_vertices
         Number of vertices in the level with the lowest cardinality
+    min_edges
+        Minimum number of vertices between adjacent levels
     extra_edge_probability
         Probability of adding an additional edge between vertices of adjacent levels.
         If `None`, the feature relationship between different levels is represented by a tree.
@@ -141,6 +151,7 @@ def hierarchical_mudata(
     dag, n_nodes_per_level = _generate_dag(
         n_level=n_mod,
         n_vertices=n_vertices,
+        min_edges=min_edges,
         extra_edge_probability=extra_edge_probability,
         extra_edge_levels=extra_edge_levels,
         transitive_closure=transitive_closure,
@@ -155,10 +166,12 @@ def hierarchical_mudata(
         axis=axis,
     )
 
+    # Ensure that the adjacency matrix is stored in topological order, so that nodes belonging to highest priority mod
+    # are coming up first, etc.
     if axis == 0:
-        mdata.varp[linkage_key] = nx.adjacency_matrix(dag)
+        mdata.varp[linkage_key] = nx.adjacency_matrix(dag, nodelist=list(nx.topological_sort(dag)))
     elif axis == 1:
-        mdata.obsp[linkage_key] = nx.adjacency_matrix(dag)
+        mdata.obsp[linkage_key] = nx.adjacency_matrix(dag, nodelist=list(nx.topological_sort(dag)))
     else:
         raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
 

@@ -146,3 +146,10 @@ class MuLink:
         indices = self._get_link_indices(axis=axis)
 
         return pd.DataFrame.sparse.from_spmatrix(mapping, index=indices, columns=indices)
+
+    @property
+    def pl(self):
+        """Plotting functionality"""
+        from .plotting import PlotAccessor
+
+        return PlotAccessor(self)

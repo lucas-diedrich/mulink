@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -11,8 +11,13 @@ DEFAULT_COLOR = "#59b9c0"
 DEFAULT_CMAP = mpl.colors.ListedColormap(["#ffffff", DEFAULT_COLOR])
 
 
-def _modality_limits(mdata: md.MuData) -> np.ndarray:
-    return np.array([np.argmax(mdata.varmap[key]) for key in mdata.mod.keys()])
+def _modality_limits(mdata: md.MuData, axis: Literal[0, 1] = 0) -> np.ndarray:
+    if axis == 0:
+        return np.array([np.argmax(mdata.varmap[key]) for key in mdata.mod.keys()])
+    elif axis == 1:
+        return np.array([np.argmax(mdata.obsmap[key]) for key in mdata.mod.keys()])
+    else:
+        raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
 
 
 class PlotAccessor:
@@ -25,6 +30,7 @@ class PlotAccessor:
     def adjacency_matrix(
         self,
         key: str = "feature_mapping",
+        axis: Literal[0, 1] = 0,
         cmap=DEFAULT_CMAP,
         ax: mpl.axes.Axes = None,
         *,
@@ -35,11 +41,11 @@ class PlotAccessor:
         if ax is None:
             _, ax = plt.subplots(1, 1)
 
-        adjaceny_matrix = self._link.link(key=key)
+        adjaceny_matrix = self._link.link(key=key, axis=axis)
         ax.imshow(adjaceny_matrix, cmap=cmap)
 
         if mod_limits:
-            modality_limits = _modality_limits(self._mdata)
+            modality_limits = _modality_limits(self._mdata, axis=axis)
             for limit in modality_limits:
                 ax.axhline(limit + 0.5, color="#000000")
                 ax.axvline(limit + 0.5, color="#000000")
@@ -61,6 +67,7 @@ class PlotAccessor:
     def graph(
         self,
         key: str = "feature_mapping",
+        axis: Literal[0, 1] = 0,
         pos: Callable[[nx.DiGraph], Any] | None = None,
         ax: mpl.axes.Axes = None,
         **kwargs,
@@ -75,14 +82,14 @@ class PlotAccessor:
             _, ax = plt.subplots(1, 1)
 
         dag = dag = nx.from_pandas_adjacency(
-            self._link.link(key=key),
+            self._link.link(key=key, axis=axis),
             create_using=nx.DiGraph,
         )
 
         if pos is None:
             pos = nx.layout.multipartite_layout(
                 dag,
-                subset_key={key: self._mdata.mod[key].var_names for key in self._mdata.mod.keys()},
+                subset_key={key: self._link._get_link_indices(axis=axis, mod=key) for key in self._mdata.mod.keys()},
                 align="vertical",
             )
         else:

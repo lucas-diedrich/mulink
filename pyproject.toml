@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+  "matplotlib",
   "mudata",
   "networkx",
   # for debug logging (referenced from the issue template)

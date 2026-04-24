@@ -25,7 +25,7 @@ class MuLink:
         Parameters
         ----------
         key
-            key in
+            key in mdata.varp (axis=0)/mdata.obsp (axis=1)
         axis
             Axis/Dimension which is shared in the mudata object.
             - `axis=0` indicates that observations are shared and features are mapping to one another.
@@ -61,7 +61,7 @@ class MuLink:
         elif axis == 1:
             return self._obj.obs_names
         else:
-            raise KeyError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
+            raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
 
     def _query(
         self,
@@ -72,18 +72,21 @@ class MuLink:
         axis: Literal[0, 1] = 0,
         include_self: bool = True,
     ) -> md.MuData:
-        adjacency_matrix = self._obj.varp[key]
+        adjacency_matrix = self._get_link(key=key, axis=axis)
 
         features = [features] if isinstance(features, str) else features
-        names = self._get_link_indices(axis=axis)
+        query_indices = self._get_link_indices(axis=axis)
 
-        query_indices = names.get_indexer(features)
-        result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
+        query_indexer = query_indices.get_indexer(features)
+        result_indices = query_func(vertices=query_indexer, adjacency_matrix=adjacency_matrix)
 
         if include_self:
-            result_indices = np.concatenate([query_indices, result_indices])
+            result_indices = np.concatenate([query_indexer, result_indices])
 
-        return self._obj[:, self._obj.var_names[result_indices]]
+        if axis == 0:
+            return self._obj[:, query_indices[result_indices]]
+        elif axis == 1:
+            return self._obj[query_indices[result_indices], :]
 
     def query_descendants(
         self,
@@ -153,12 +156,16 @@ class MuLink:
             raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
 
     def link(self, key: str = "feature_mapping", axis: Literal[0, 1] = 0) -> pd.DataFrame:
-        """Returns the feature mapping matrix of the current object
+        """Returns the linking matrix of the current object
 
         Parameters
         ----------
         key
             Key of the linking matrix in `.varp`/`.obsp` to use.
+        axis
+            Axis/Dimension which is shared in the mudata object.
+            - `axis=0` indicates that observations are shared and features are mapping to one another.
+            - `axis=1` indicates that features are shared and observations are mapping to one another.
         """
         mapping = self._get_link(key=key, axis=axis)
         indices = self._get_link_indices(axis=axis)

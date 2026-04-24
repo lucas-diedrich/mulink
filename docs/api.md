@@ -12,6 +12,30 @@
     basic.MuLink
 ```
 
+## Querying
+
+```{eval-rst}
+.. module:: mulink.query
+.. currentmodule:: mulink
+
+.. autosummary::
+    :toctree: generated
+
+    query.QueryAccessor
+```
+
+## Plotting
+
+```{eval-rst}
+.. module:: mulink.plotting
+.. currentmodule:: mulink
+
+.. autosummary::
+    :toctree: generated
+
+    plotting.PlotAccessor
+```
+
 ## Simulate
 
 ```{eval-rst}

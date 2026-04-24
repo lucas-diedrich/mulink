@@ -1,20 +1,22 @@
 """Main entrypoint for mulink"""
 
-from collections.abc import Callable
 from typing import Literal
 
 import mudata as md
-import numpy as np
 import pandas as pd
 from mudata import register_mudata_namespace
 from scipy.sparse import csr_matrix
 
-from .query import get_ancestors, get_descendants
-
 
 @register_mudata_namespace("link")
 class MuLink:
-    """Link between modalities in mudata"""
+    """Link between modalities in mudata
+
+    Functionalities are extended via accessors:
+
+        - query: Querying functionalities
+        - pl: Plotting functionalities
+    """
 
     _PAIRWISE = {0: "varp", 1: "obsp"}
     _INDICES = {0: "var_names", 1: "obs_names"}
@@ -56,88 +58,6 @@ class MuLink:
         else:
             return getattr(self._obj[mod], names)
 
-    def _query(
-        self,
-        query_func: Callable[[np.ndarray, csr_matrix], np.ndarray],
-        features: str | list[str],
-        *,
-        key: str = "feature_mapping",
-        axis: Literal[0, 1] = 0,
-        include_self: bool = True,
-    ) -> md.MuData:
-        adjacency_matrix = self._get_link(key=key, axis=axis)
-
-        features = [features] if isinstance(features, str) else features
-        query_indices = self._get_link_indices(axis=axis)
-
-        query_indexer = query_indices.get_indexer(features)
-        result_indices = query_func(vertices=query_indexer, adjacency_matrix=adjacency_matrix)
-
-        if include_self:
-            result_indices = np.concatenate([query_indexer, result_indices])
-
-        selection = query_indices[result_indices]
-        slicer = (slice(None), selection) if axis == 0 else (selection, slice(None))
-        return self._obj[slicer]
-
-    def query_descendants(
-        self,
-        features: str | list[str],
-        *,
-        key: str = "feature_mapping",
-        axis: Literal[0, 1] = 0,
-        include_self: bool = True,
-    ) -> md.MuData:
-        """Get direct descendants of features
-
-        Examples
-        --------
-
-        .. code-block:: python
-
-            mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
-
-            mdata.link.query_descendants(features="mod0-0")
-            mdata.link.query_descendants(features=["mod0-0", "mod0-1"])
-
-        """
-        return self._query(
-            query_func=get_descendants,
-            features=features,
-            key=key,
-            axis=axis,
-            include_self=include_self,
-        )
-
-    def query_ancestors(
-        self,
-        features: str | list[str],
-        *,
-        key: str = "feature_mapping",
-        axis: Literal[0, 1] = 0,
-        include_self: bool = True,
-    ) -> md.MuData:
-        """Get direct ancestors of features
-
-        Examples
-        --------
-
-        .. code-block:: python
-
-            mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
-
-            mdata.link.query_ancestors(features="mod2-0")
-            mdata.link.query_ancestors(features=["mod2-0", "mod2-1"])
-
-        """
-        return self._query(
-            query_func=get_ancestors,
-            features=features,
-            key=key,
-            axis=axis,
-            include_self=include_self,
-        )
-
     def add_link(self, link: csr_matrix, *, key: str = "feature_mapping", axis: Literal[0, 1] = 0) -> None:
         """Add a link to mudata (on `.varp` for `axis=0`, `.obsp` for `axis=1`)."""
         pairwise, _ = self._attrs(axis)
@@ -159,6 +79,13 @@ class MuLink:
         indices = self._get_link_indices(axis=axis)
 
         return pd.DataFrame.sparse.from_spmatrix(mapping, index=indices, columns=indices)
+
+    @property
+    def query(self):
+        """Querying functionality"""
+        from .query import QueryAccessor
+
+        return QueryAccessor(self)
 
     @property
     def pl(self):

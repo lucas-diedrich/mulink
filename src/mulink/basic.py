@@ -26,8 +26,8 @@ class MuLink:
         """Resolve axis to (pairwise_attr, names_attr) on the underlying MuData.
 
         Follows https://mudata.readthedocs.io/stable/notebooks/axes.html#axes-in-mudata:
-        - `axis=0` → observations are shared, features are mapped (`.varp` / `.var_names`).
-        - `axis=1` → features are shared, observations are mapped (`.obsp` / `.obs_names`).
+        - `axis=0`: observations are shared, features are mapped (`.varp` / `.var_names`).
+        - `axis=1`: features are shared, observations are mapped (`.obsp` / `.obs_names`).
         """
         if axis not in (0, 1):
             raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
@@ -139,8 +139,8 @@ class MuLink:
             Key of the linking matrix in `.varp`/`.obsp` to use.
         axis
             Axis/Dimension which is shared in the mudata object.
-            - `axis=0` indicates that observations are shared and features are mapping to one another.
-            - `axis=1` indicates that features are shared and observations are mapping to one another.
+            - `axis=0`: indicates that observations are shared and features are mapping to one another.
+            - `axis=1`: indicates that features are shared and observations are mapping to one another.
         """
         mapping = self._get_link(key=key, axis=axis)
         indices = self._get_link_indices(axis=axis)

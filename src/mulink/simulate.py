@@ -1,6 +1,7 @@
 """Simulate artificial mudata with explicit feature relationship"""
 
 from itertools import product
+from typing import Literal
 
 import anndata as ad
 import mudata as md
@@ -94,7 +95,8 @@ def hierarchical_mudata(
     extra_edge_probability: float | None = 0.2,
     extra_edge_levels: list[int] | None = None,
     transitive_closure: bool = True,
-    varp_key: str = "feature_mapping",
+    linkage_key: str = "feature_mapping",
+    axis: Literal[0, 1] = 0,
     random_state: int = 42,
 ):
     """Generate a mudata object with hierarchical feature relationship
@@ -118,7 +120,7 @@ def hierarchical_mudata(
         Whether to return a graph where features that are indirectly linked are connected with an
         explicit edge.
         For example, for the feature mapping A --> B --> C, the connection A --> C will also be added
-    varp_key
+    linkage_key
         Name of key that contains the feature mapping in `.varp` attribute of the returned :class:`mudata.MuData`
         object
     random_state
@@ -127,8 +129,8 @@ def hierarchical_mudata(
 
     Returns
     -------
-    A :class:`mudata.MuData` object with explicit feature mapping. The individual modalities/feature-levels are indicated
-    with `mod{idx}`. The feature mapping is added as adjacency matrix with in the `.varp` attribute as `varp_key`.
+    A :class:`mudata.MuData` object with explicit mapping. The individual modalities are indicated
+    with `mod{idx}`. The linkage matrix is added as adjacency matrix with in the `.varp` (axis=0)/`.obsp` (axis=1) attribute as `linkage_key`.
     In the matrix, entry (i, j) corresponds to a directed edge from feature i to feature j.
     """
     if extra_edge_levels is not None and any(edge_level >= n_mod - 1 for edge_level in extra_edge_levels):
@@ -150,8 +152,14 @@ def hierarchical_mudata(
             f"mod{mod}": _generate_anndata(n_obs=n_obs, n_var=n_nodes_per_level[mod], var_prefix=f"mod{mod}-", rng=rng)
             for mod in range(n_mod)
         },
+        axis=axis,
     )
 
-    mdata.varp[varp_key] = nx.adjacency_matrix(dag)
+    if axis == 0:
+        mdata.varp[linkage_key] = nx.adjacency_matrix(dag)
+    elif axis == 1:
+        mdata.obsp[linkage_key] = nx.adjacency_matrix(dag)
+    else:
+        raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
 
     return mdata

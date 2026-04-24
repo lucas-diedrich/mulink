@@ -39,12 +39,12 @@ def test__generate_dag(
     assert n_nodes_per_level == expected_nodes_per_level
 
 
-@pytest.mark.parametrize("varp_key", ["feature_mapping", "test"])
+@pytest.mark.parametrize("linkage_key", ["feature_mapping", "test"])
 @pytest.mark.parametrize("n_obs", [5])
 @pytest.mark.parametrize("n_vertices", [1, 3])
 @pytest.mark.parametrize("n_mod", [1, 3])
-def test_hierarchical_mudata(n_mod: int, n_vertices: int, n_obs: int, varp_key: str) -> None:
-    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, varp_key=varp_key)
+def test_hierarchical_mudata(n_mod: int, n_vertices: int, n_obs: int, linkage_key: str) -> None:
+    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, linkage_key=linkage_key)
 
     expected_modality_names = {f"mod{idx}" for idx in range(n_mod)}
     expected_n_vars = sum(n_vertices ** (mod + 1) for mod in range(n_mod))
@@ -52,4 +52,4 @@ def test_hierarchical_mudata(n_mod: int, n_vertices: int, n_obs: int, varp_key: 
     assert isinstance(mdata, md.MuData)
     assert set(mdata.mod.keys()) == expected_modality_names
     assert mdata.shape == (n_obs, expected_n_vars)
-    assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.varp[varp_key], create_using=nx.DiGraph))
+    assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.varp[linkage_key], create_using=nx.DiGraph))

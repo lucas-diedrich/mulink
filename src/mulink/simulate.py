@@ -1,6 +1,6 @@
 """Simulate artificial mudata with explicit feature relationship"""
 
-from itertools import count, product
+from itertools import product
 
 import anndata as ad
 import mudata as md
@@ -62,7 +62,7 @@ def _generate_dag(
         subtree = nx.balanced_tree(r=min_edges, h=(n_level - 1), create_using=nx.DiGraph)
         subtrees.append(subtree)
 
-    dag = nx.union_all(subtrees, rename=count())
+    dag = nx.union_all(subtrees, rename=(f"{idx}-" for idx in range(n_vertices)))
 
     level_to_nodes = dict(enumerate(nx.topological_generations(dag)))
 
@@ -163,6 +163,8 @@ def hierarchical_mudata(
         },
     )
 
-    mdata.varp[varp_key] = nx.adjacency_matrix(dag)
+    # Ensure that the adjacency matrix is stored in topological order, so that nodes belonging to highest priority mod
+    # are coming up first, etc.
+    mdata.varp[varp_key] = nx.adjacency_matrix(dag, nodelist=list(nx.topological_sort(dag)))
 
     return mdata

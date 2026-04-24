@@ -16,52 +16,32 @@ from .query import get_ancestors, get_descendants
 class MuLink:
     """Link between modalities in mudata"""
 
+    _PAIRWISE = {0: "varp", 1: "obsp"}
+    _INDICES = {0: "var_names", 1: "obs_names"}
+
     def __init__(self, mdata: md.MuData):
         self._obj = mdata
 
-    def _get_link(self, key: str = "feature_mapping", axis: Literal[0, 1] = 0):
-        """Get the linking matrix for an axis
+    def _attrs(self, axis: Literal[0, 1]) -> tuple[str, str]:
+        """Resolve axis to (pairwise_attr, names_attr) on the underlying MuData.
 
-        Parameters
-        ----------
-        key
-            key in mdata.varp (axis=0)/mdata.obsp (axis=1)
-        axis
-            Axis/Dimension which is shared in the mudata object.
-            - `axis=0` indicates that observations are shared and features are mapping to one another.
-            - `axis=1` indicates that features are shared and observations are mapping to one another.
-
-        Notes
-        -----
-        Follows the syntax in https://mudata.readthedocs.io/stable/notebooks/axes.html#axes-in-mudata.
+        Follows https://mudata.readthedocs.io/stable/notebooks/axes.html#axes-in-mudata:
+        - `axis=0` → observations are shared, features are mapped (`.varp` / `.var_names`).
+        - `axis=1` → features are shared, observations are mapped (`.obsp` / `.obs_names`).
         """
-        if axis == 0:
-            return self._obj.varp[key]
-        elif axis == 1:
-            return self._obj.obsp[key]
-        else:
+        if axis not in (0, 1):
             raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
+        return self._PAIRWISE[axis], self._INDICES[axis]
+
+    def _get_link(self, key: str = "feature_mapping", axis: Literal[0, 1] = 0):
+        """Get the linking matrix for an axis."""
+        pairwise, _ = self._attrs(axis)
+        return getattr(self._obj, pairwise)[key]
 
     def _get_link_indices(self, axis: Literal[0, 1] = 0):
-        """Get the indices of the matrix for an axis
-
-        Parameters
-        ----------
-        axis
-            Axis/Dimension which is shared in the mudata object.
-            - `axis=0` indicates that observations are shared and features are mapping to one another.
-            - `axis=1` indicates that features are shared and observations are mapping to one another.
-
-        Notes
-        -----
-        Follows the syntax in https://mudata.readthedocs.io/stable/notebooks/axes.html#axes-in-mudata.
-        """
-        if axis == 0:
-            return self._obj.var_names
-        elif axis == 1:
-            return self._obj.obs_names
-        else:
-            raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
+        """Get the indices of the matrix for an axis."""
+        _, names = self._attrs(axis)
+        return getattr(self._obj, names)
 
     def _query(
         self,
@@ -83,10 +63,9 @@ class MuLink:
         if include_self:
             result_indices = np.concatenate([query_indexer, result_indices])
 
-        if axis == 0:
-            return self._obj[:, query_indices[result_indices]]
-        elif axis == 1:
-            return self._obj[query_indices[result_indices], :]
+        selection = query_indices[result_indices]
+        slicer = (slice(None), selection) if axis == 0 else (selection, slice(None))
+        return self._obj[slicer]
 
     def query_descendants(
         self,
@@ -147,13 +126,9 @@ class MuLink:
         )
 
     def add_link(self, link: csr_matrix, *, key: str = "feature_mapping", axis: Literal[0, 1] = 0) -> None:
-        """Add a feature link to mudata"""
-        if axis == 0:
-            self._obj.varp[key] = csr_matrix(link)
-        elif axis == 1:
-            self._obj.obsp[key] = csr_matrix(link)
-        else:
-            raise ValueError(f"Only `axis=0` or `axis=1` supported, got `axis={axis}`")
+        """Add a link to mudata (on `.varp` for `axis=0`, `.obsp` for `axis=1`)."""
+        pairwise, _ = self._attrs(axis)
+        getattr(self._obj, pairwise)[key] = csr_matrix(link)
 
     def link(self, key: str = "feature_mapping", axis: Literal[0, 1] = 0) -> pd.DataFrame:
         """Returns the linking matrix of the current object

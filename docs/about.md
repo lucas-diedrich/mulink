@@ -1,6 +1,6 @@
 # About this package
 
-This project was started at the [scverse proteomics hackathon in Berlin 2026](https://github.com/scverse/202603_hackathon_proteomics).
+This project was started at the [scverse proteomics hackathon in Berlin 2026](https://github.com/scverse/202603_hackathon_proteomics), motivated by the original [mudata issue](https://github.com/scverse/mudata/issues/111).
 
 
 ## Initial working group
@@ -19,3 +19,5 @@ Sonja Stockhaus | sonja.stockhaus@tum.de | https://github.com/Sonja-Stockhaus
 Benedikt Christian Clemens | - | https://github.com/benediktchristianclemens
 Charu Sharma | charu.sharma@ki.se | https://github.com/chikicharu
 Lukas Kraller | - | -
+
+Storing the graph representation in `varp` was proposed by Ilia Kats (https://github.com/ilia-kats)

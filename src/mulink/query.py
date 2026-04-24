@@ -26,7 +26,7 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
     List of direct successors of the provided vertices
     """
     # For an adjacency matrix following networkx convention, finding
-    # all successors of a vertix corresponds to finding the columns containing nonzero `columns`
+    # all successors of a vertix corresponds to finding the `columns` containing nonzero values
     # in the `row` corresponding to the vertix
     _, cols = adjacency_matrix[vertices, :].nonzero()
 
@@ -45,8 +45,8 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
     List of direct ancestors of the provided vertices
     """
     # For an adjacency matrix following networkx convention, finding
-    # all ancestors of a vertix corresponds to finding the columns containing nonzero `columns`
-    # in the `row` corresponding to the vertix
+    # all ancestors of a vertix corresponds to finding the `rows` containing nonzero values
+    # in the `column` corresponding to the vertix
     rows, _ = adjacency_matrix[:, vertices].nonzero()
 
     # N:M mapping might yield redundant features - only return unique features

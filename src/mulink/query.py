@@ -1,6 +1,7 @@
 """Query an adjacency matrix"""
 
 from collections.abc import Callable, Iterable
+from typing import Literal
 
 import mudata as md
 import numpy as np
@@ -66,25 +67,30 @@ class QueryAccessor:
         features: str | list[str],
         *,
         key: str = "feature_mapping",
+        axis: Literal[0, 1] = 0,
         include_self: bool = True,
     ) -> md.MuData:
-        adjacency_matrix = self._mdata.varp[key]
+        adjacency_matrix = self._link._get_link(key=key, axis=axis)
 
         features = [features] if isinstance(features, str) else features
-        query_indices = self._mdata.var_names.get_indexer(features)
+        query_indices = self._link._get_link_indices(axis=axis)
 
-        result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
+        query_indexer = query_indices.get_indexer(features)
+        result_indices = query_func(vertices=query_indexer, adjacency_matrix=adjacency_matrix)
 
         if include_self:
-            result_indices = np.concatenate([query_indices, result_indices])
+            result_indices = np.concatenate([query_indexer, result_indices])
 
-        return self._mdata[:, self._mdata.var_names[result_indices]]
+        selection = query_indices[result_indices]
+        slicer = (slice(None), selection) if axis == 0 else (selection, slice(None))
+        return self._mdata[slicer]
 
     def descendants(
         self,
         features: str | list[str],
         *,
         key: str = "feature_mapping",
+        axis: Literal[0, 1] = 0,
         include_self: bool = True,
     ) -> md.MuData:
         """Get direct descendants of features
@@ -96,14 +102,15 @@ class QueryAccessor:
 
             mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
 
-            mdata.link.query.descendants(features="mod0-0")
-            mdata.link.query.descendants(features=["mod0-0", "mod0-1"])
+            mdata.link.query_descendants(features="mod0-0")
+            mdata.link.query_descendants(features=["mod0-0", "mod0-1"])
 
         """
         return self._query(
             query_func=get_descendants,
             features=features,
             key=key,
+            axis=axis,
             include_self=include_self,
         )
 
@@ -112,6 +119,7 @@ class QueryAccessor:
         features: str | list[str],
         *,
         key: str = "feature_mapping",
+        axis: Literal[0, 1] = 0,
         include_self: bool = True,
     ) -> md.MuData:
         """Get direct ancestors of features
@@ -123,13 +131,14 @@ class QueryAccessor:
 
             mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
 
-            mdata.link.query.ancestors(features="mod2-0")
-            mdata.link.query.ancestors(features=["mod2-0", "mod2-1"])
+            mdata.link.query_ancestors(features="mod2-0")
+            mdata.link.query_ancestors(features=["mod2-0", "mod2-1"])
 
         """
         return self._query(
             query_func=get_ancestors,
             features=features,
             key=key,
+            axis=axis,
             include_self=include_self,
         )

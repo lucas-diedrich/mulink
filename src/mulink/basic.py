@@ -107,3 +107,10 @@ class MuLink:
         return pd.DataFrame.sparse.from_spmatrix(
             self._obj.varp[key], index=self._obj.var_names, columns=self._obj.var_names
         )
+
+    @property
+    def pl(self):
+        """Plotting functionality"""
+        from .plotting import PlotAccessor
+
+        return PlotAccessor(self)

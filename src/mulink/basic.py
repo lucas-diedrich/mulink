@@ -38,10 +38,23 @@ class MuLink:
         pairwise, _ = self._attrs(axis)
         return getattr(self._obj, pairwise)[key]
 
-    def _get_link_indices(self, axis: Literal[0, 1] = 0):
-        """Get the indices of the matrix for an axis."""
+    def _get_link_indices(self, axis: Literal[0, 1] = 0, mod: str | None = None):
+        """Get the indices of the matrix for an axis.
+
+        Parameters
+        ----------
+        mod
+            Modality. If `None`, uses index of full object
+        axis
+            Axis/Dimension which is shared in the mudata object.
+            - `axis=0`: indicates that observations are shared and features are mapping to one another.
+            - `axis=1`: indicates that features are shared and observations are mapping to one another.
+        """
         _, names = self._attrs(axis)
-        return getattr(self._obj, names)
+        if mod is None:
+            return getattr(self._obj, names)
+        else:
+            return getattr(self._obj[mod], names)
 
     def _query(
         self,

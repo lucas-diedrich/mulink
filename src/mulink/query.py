@@ -58,7 +58,7 @@ class QueryAccessor:
 
     def __init__(self, link):
         self._link = link
-        self._obj = self._link._obj
+        self._mdata = self._link._obj
 
     def _query(
         self,
@@ -68,17 +68,17 @@ class QueryAccessor:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        adjacency_matrix = self._obj.varp[key]
+        adjacency_matrix = self._mdata.varp[key]
 
         features = [features] if isinstance(features, str) else features
-        query_indices = self._obj.var_names.get_indexer(features)
+        query_indices = self._mdata.var_names.get_indexer(features)
 
         result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
 
         if include_self:
             result_indices = np.concatenate([query_indices, result_indices])
 
-        return self._obj[:, self._obj.var_names[result_indices]]
+        return self._mdata[:, self._mdata.var_names[result_indices]]
 
     def descendants(
         self,

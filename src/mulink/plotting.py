@@ -41,8 +41,8 @@ class PlotAccessor:
         if ax is None:
             _, ax = plt.subplots(1, 1)
 
-        adjaceny_matrix = self._link.link(key=key, axis=axis)
-        ax.imshow(adjaceny_matrix, cmap=cmap)
+        adjacency_matrix = self._link.link(key=key, axis=axis)
+        ax.imshow(adjacency_matrix, cmap=cmap)
 
         if mod_limits:
             modality_limits = _modality_limits(self._mdata, axis=axis)
@@ -51,11 +51,11 @@ class PlotAccessor:
                 ax.axvline(limit + 0.5, color="#000000")
 
         if label:
-            tickpositions = range(adjaceny_matrix.shape[0])
+            tickpositions = range(adjacency_matrix.shape[0])
             ax.set_xticks(tickpositions)
             ax.set_yticks(tickpositions)
-            ax.set_xticklabels(adjaceny_matrix.index, ha="center", rotation=90)
-            ax.set_yticklabels(adjaceny_matrix.columns, ha="right", rotation=0)
+            ax.set_xticklabels(adjacency_matrix.index, ha="center", rotation=90)
+            ax.set_yticklabels(adjacency_matrix.columns, ha="right", rotation=0)
         else:
             ax.set_xticks([])
             ax.set_yticks([])
@@ -81,7 +81,7 @@ class PlotAccessor:
         if ax is None:
             _, ax = plt.subplots(1, 1)
 
-        dag = dag = nx.from_pandas_adjacency(
+        dag = nx.from_pandas_adjacency(
             self._link.link(key=key, axis=axis),
             create_using=nx.DiGraph,
         )

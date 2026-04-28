@@ -47,7 +47,9 @@ def test__generate_dag(
 @pytest.mark.parametrize("n_vertices", [1, 3, 10])
 @pytest.mark.parametrize("n_mod", [1, 3])
 def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs: int, linkage_key: str) -> None:
-    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, min_edges=min_edges, linkage_key=linkage_key)
+    mdata = hierarchical_mudata(
+        n_mod=n_mod, n_obs=n_obs, n_vertices=n_vertices, min_edges=min_edges, linkage_key=linkage_key
+    )
 
     expected_modality_names = {f"mod{idx}" for idx in range(n_mod)}
     expected_n_vars = sum(n_vertices * min_edges**mod for mod in range(n_mod))

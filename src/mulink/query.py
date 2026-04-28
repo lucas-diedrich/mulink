@@ -102,8 +102,8 @@ class QueryAccessor:
 
             mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
 
-            mdata.link.query_descendants(features="mod0-0")
-            mdata.link.query_descendants(features=["mod0-0", "mod0-1"])
+            mdata.link.query.descendants(features="mod0-0")
+            mdata.link.query.descendants(features=["mod0-0", "mod0-1"])
 
         """
         return self._query(
@@ -131,8 +131,8 @@ class QueryAccessor:
 
             mdata = mulink.simulate.hierarchical_mudata(n_mod=3)
 
-            mdata.link.query_ancestors(features="mod2-0")
-            mdata.link.query_ancestors(features=["mod2-0", "mod2-1"])
+            mdata.link.query.ancestors(features="mod2-0")
+            mdata.link.query.ancestors(features=["mod2-0", "mod2-1"])
 
         """
         return self._query(

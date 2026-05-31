@@ -7,6 +7,7 @@
 # -- Path setup --------------------------------------------------------------
 import shutil
 import sys
+import warnings
 from datetime import datetime
 from importlib.metadata import metadata
 from pathlib import Path
@@ -15,6 +16,17 @@ from sphinxcontrib import katex
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "extensions"))
+
+# TODO: Remove when switching to newer anndata versions
+# anndata moved `ExtensionNamespace` to the `scverse-misc` package and kept a
+# deprecation shim that warns on access. sphinx-autodoc-typehints resolves every
+# object in the anndata intersphinx inventory, tripping the shim. The symbol is
+# upstream-owned, so silence the warning rather than treating it as a build error.
+warnings.filterwarnings(
+    "ignore",
+    message="Importing ExtensionNamespace",
+    category=FutureWarning,
+)
 
 
 # -- Project information -----------------------------------------------------

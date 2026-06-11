@@ -45,15 +45,15 @@ If you don't have Python installed, we recommend installing [uv][].
 
 There are several alternative options to install mulink:
 
-<!--
-1) Install the latest release of `mulink` from [PyPI][]:
+
+Install the latest release of `mulink` from [PyPI][]:
 
 ```bash
 pip install mulink
 ```
--->
 
-1. Install the latest development version:
+
+`mulink` is under active development. You can install development versions via:
 
 ```bash
 pip install git+https://github.com/lucas-diedrich/mulink.git@main
@@ -66,7 +66,7 @@ See the [changelog][].
 ## Contact
 
 <!-- For questions and help requests, you can reach out in the [scverse discourse][]. -->
-If you found a bug, please use the [issue tracker][].
+If you found a bug or have an idea for a new feature, please use the [issue tracker][].
 
 ## Citation
 
@@ -79,7 +79,7 @@ This project was started at the [scverse proteomics hackathon in Berlin 2026](ht
 [issue tracker]: https://github.com/lucas-diedrich/mulink/issues
 [tests]: https://github.com/lucas-diedrich/mulink/actions/workflows/test.yaml
 [documentation]: https://mulink.readthedocs.io
-[changelog]: https://mulink.readthedocs.io/en/latest/changelog.html
+[changelog]: https://github.com/lucas-diedrich/mulink/releases
 [api documentation]: https://mulink.readthedocs.io/en/latest/api.html
 [Design Document]: https://mulink.readthedocs.io/en/latest/rfc.html
 

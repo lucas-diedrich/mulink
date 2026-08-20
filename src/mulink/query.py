@@ -53,7 +53,7 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
 
     # Transpose adjacency matrix so that edge directions become inverted.
     # scipy converts to CSR in `breadth_first_order`, so this prevents repetitive conversions
-    inverted_adjacency_matrix = adjacency_matrix.T.tocsr()
+    inverted_adjacency_matrix = csr_matrix(adjacency_matrix.T)
     ancestors = np.concatenate(
         [
             breadth_first_order(inverted_adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)

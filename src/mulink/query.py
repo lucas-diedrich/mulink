@@ -25,7 +25,6 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
     Returns
     -------
     List of successors of the provided vertices
-    Direct successors of the provided vertices
     """
     vertices = [vertices] if isinstance(vertices, int) else vertices
 
@@ -51,7 +50,6 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
     Returns
     -------
     List of ancestors of the provided vertices
-    Direct ancestors of the provided vertices
     """
     vertices = [vertices] if isinstance(vertices, int) else vertices
 

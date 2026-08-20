@@ -1,6 +1,6 @@
 """Query an adjacency matrix"""
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 
 import mudata as md
 import numpy as np
@@ -69,10 +69,32 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
     return np.unique(ancestors)
 
 
+def filter_modality_members(vertices: Iterable[int], varmap: Mapping, mods: Iterable[str]) -> np.ndarray:
+    """Filter for all vertices that are member in a modality
+
+    Parameters
+    ----------
+    vertices
+        Global integer position of vertix in mdata object
+    varmap
+        mudata varmap
+    modalities
+        Modalities to consider
+
+    Returns
+    -------
+    Vertices that are members of the provided modalities
+    """
+    # Flatten as varmap is a 1d array
+    allowed_indices = np.concatenate([np.flatnonzero(varmap[mod]) for mod in mods])
+
+    return vertices[np.isin(vertices, allowed_indices)]
+
+
 class QueryAccessor:
     """Query functionality for mulink"""
 
-    def __init__(self, link):
+    def __init__(self, link) -> None:
         self._link = link
         self._mdata = self._link._obj
 
@@ -83,6 +105,7 @@ class QueryAccessor:
         *,
         key: str = "feature_mapping",
         include_self: bool = True,
+        mods: str | list[str] | None = None,
     ) -> md.MuData:
         adjacency_matrix = self._mdata.varp[key]
 
@@ -94,6 +117,10 @@ class QueryAccessor:
         if include_self:
             result_indices = np.union1d(result_indices, query_indices)
 
+        if mods is not None:
+            mods = [mods] if isinstance(mods, str) else mods
+            result_indices = filter_modality_members(vertices=result_indices, varmap=self._mdata.varmap, mods=mods)
+
         return self._mdata[:, self._mdata.var_names[result_indices]]
 
     def descendants(
@@ -102,8 +129,22 @@ class QueryAccessor:
         *,
         key: str = "feature_mapping",
         include_self: bool = True,
+        include_mods: str | list[str] | None = None,
     ) -> md.MuData:
         """Get descendants of features
+
+        Parameters
+        ----------
+        features
+            Features to query for
+        key
+            Key in `mdata.varm` that represents the mulink graph
+        include_self
+            Whether to include the query features in the results.
+        include_mods
+            Only include features from the provided `mdata.mods` in the results.
+            If `None`, includes members of all modalities.
+
 
         Examples
         --------
@@ -117,10 +158,7 @@ class QueryAccessor:
 
         """
         return self._query(
-            query_func=get_descendants,
-            features=features,
-            key=key,
-            include_self=include_self,
+            query_func=get_descendants, features=features, key=key, include_self=include_self, mods=include_mods
         )
 
     def ancestors(
@@ -129,8 +167,21 @@ class QueryAccessor:
         *,
         key: str = "feature_mapping",
         include_self: bool = True,
+        include_mods: str | list[str] | None = None,
     ) -> md.MuData:
         """Get ancestors of features
+
+        Parameters
+        ----------
+        features
+            Features to query for
+        key
+            Key in `mdata.varm` that represents the mulink graph
+        include_self
+            Whether to include the query features in the results.
+        include_mods
+            Only include features from the provided `mdata.mods` in the results.
+            If `None`, includes members of all modalities.
 
         Examples
         --------
@@ -144,8 +195,5 @@ class QueryAccessor:
 
         """
         return self._query(
-            query_func=get_ancestors,
-            features=features,
-            key=key,
-            include_self=include_self,
+            query_func=get_ancestors, features=features, key=key, include_self=include_self, mods=include_mods
         )

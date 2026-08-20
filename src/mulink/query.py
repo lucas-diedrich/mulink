@@ -42,7 +42,7 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
 def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
     """Get all ancestors for a feature or a list of features
 
-    A direct ancestors represents a vertix that can be reached by a single hop against
+    A direct ancestors represents a vertix that can be reached from a node against the
     edge directionality, including self.
 
     Returns

@@ -101,7 +101,7 @@ def hierarchical_mudata(
     min_edges=2,
     extra_edge_probability: float | None = 0.2,
     extra_edge_levels: list[int] | None = None,
-    transitive_closure: bool = True,
+    transitive_closure: bool = False,
     varp_key: str = "feature_mapping",
     random_state: int = 42,
 ):

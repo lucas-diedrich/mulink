@@ -7,11 +7,6 @@ import pytest
 
 from mulink.simulate import _generate_anndata, _generate_dag, hierarchical_mudata
 
-# Mudata changed the settings override context manager from a module to a method in version 0.4
-# see: https://mudata.readthedocs.io/latest/changelog.html
-if hasattr(md, "set_options"):  # removed in mudata 0.4, where False is already the default
-    md.set_options(pull_on_update=False)
-
 
 @pytest.mark.parametrize(("n_obs", "n_var"), [(0, 0), (1, 2)])
 def test__generate_anndata(n_obs: int, n_var: int) -> None:

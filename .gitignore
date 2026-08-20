@@ -19,3 +19,13 @@ __pycache__/
 # docs
 /docs/generated/
 /docs/_build/
+
+
+# Data
+*.csv
+*.tsv
+*.parquet
+*.zarr
+*.h5mu
+*.h5ad
+*h5df

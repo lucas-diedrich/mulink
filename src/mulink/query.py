@@ -12,7 +12,7 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
     """Get all descendants for a feature or a list of features
 
     Descendants represent vertices that can be reached from a node along the
-    edge directionality, including self.
+    edge directionality.
 
     Parameters
     ----------
@@ -24,13 +24,15 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
 
     Returns
     -------
-    List of direct successors of the provided vertices
+    List of successors of the provided vertices
     """
     vertices = [vertices] if isinstance(vertices, int) else vertices
 
+    # Exclude self (first node in results as results represent a tree)
+    # This is necessary to allow for the option to exclude self from queries
     descendants = np.concatenate(
         [
-            breadth_first_order(adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)
+            breadth_first_order(adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)[1:]
             for vertix in vertices
         ]
     )
@@ -43,20 +45,22 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
     """Get all ancestors for a feature or a list of features
 
     A direct ancestors represents a vertix that can be reached from a node against the
-    edge directionality, including self.
+    edge directionality.
 
     Returns
     -------
-    List of direct ancestors of the provided vertices
+    List of ancestors of the provided vertices
     """
     vertices = [vertices] if isinstance(vertices, int) else vertices
 
     # Transpose adjacency matrix so that edge directions become inverted.
     # scipy converts to CSR in `breadth_first_order`, so this prevents repetitive conversions
+    # Exclude self (first node in results as results represent a tree)
+    # This is necessary to allow for the option to exclude self from queries
     inverted_adjacency_matrix = csr_matrix(adjacency_matrix.T)
     ancestors = np.concatenate(
         [
-            breadth_first_order(inverted_adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)
+            breadth_first_order(inverted_adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)[1:]
             for vertix in vertices
         ]
     )
@@ -87,9 +91,8 @@ class QueryAccessor:
 
         result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
 
-        if not include_self:
-            # Drop self
-            result_indices = result_indices[~np.isin(result_indices, query_indices)]
+        if include_self:
+            result_indices = np.union1d(result_indices, query_indices)
 
         return self._mdata[:, self._mdata.var_names[result_indices]]
 

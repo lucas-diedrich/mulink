@@ -5,12 +5,13 @@ from collections.abc import Callable, Iterable
 import mudata as md
 import numpy as np
 from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import breadth_first_order
 
 
 def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
-    """Get all direct descendants for a feature or a list of features
+    """Get all descendants for a feature or a list of features
 
-    A direct descendants represents a vertix that can be reached by a single hop along the
+    Descendants represent vertices that can be reached from a node along the
     edge directionality.
 
     Parameters
@@ -25,17 +26,21 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
     -------
     List of direct successors of the provided vertices
     """
-    # For an adjacency matrix following networkx convention, finding
-    # all successors of a vertix corresponds to finding the `columns` containing nonzero values
-    # in the `row` corresponding to the vertix
-    _, cols = adjacency_matrix[vertices, :].nonzero()
+    vertices = [vertices] if isinstance(vertices, int) else vertices
+
+    descendants = np.concatenate(
+        [
+            breadth_first_order(adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)
+            for vertix in vertices
+        ]
+    )
 
     # N:M mapping might yield redundant features - only return unique features
-    return np.unique(cols)
+    return np.unique(descendants)
 
 
 def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
-    """Get all direct ancestors for a feature or a list of features
+    """Get all ancestors for a feature or a list of features
 
     A direct ancestors represents a vertix that can be reached by a single hop against
     edge directionality.
@@ -44,13 +49,19 @@ def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -
     -------
     List of direct ancestors of the provided vertices
     """
-    # For an adjacency matrix following networkx convention, finding
-    # all ancestors of a vertix corresponds to finding the `rows` containing nonzero values
-    # in the `column` corresponding to the vertix
-    rows, _ = adjacency_matrix[:, vertices].nonzero()
+    vertices = [vertices] if isinstance(vertices, int) else vertices
+
+    # Transpose adjacency matrix so that edge directions become inverted
+    inverted_adjacency_matrix = adjacency_matrix.T
+    ancestors = np.concatenate(
+        [
+            breadth_first_order(inverted_adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)
+            for vertix in vertices
+        ]
+    )
 
     # N:M mapping might yield redundant features - only return unique features
-    return np.unique(rows)
+    return np.unique(ancestors)
 
 
 class QueryAccessor:

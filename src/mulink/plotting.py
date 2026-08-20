@@ -18,7 +18,7 @@ def _modality_limits(mdata: md.MuData) -> np.ndarray:
 class PlotAccessor:
     """Plotting accessor for mulink"""
 
-    def __init__(self, link):
+    def __init__(self, link) -> None:
         self._link = link
         self._mdata = self._link._obj
 

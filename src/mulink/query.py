@@ -96,7 +96,7 @@ def filter_modality_members(vertices: Iterable[int], varmap: Mapping, mods: Iter
 class QueryAccessor:
     """Query functionality for mulink"""
 
-    def __init__(self, link):
+    def __init__(self, link) -> None:
         self._link = link
         self._mdata = self._link._obj
 

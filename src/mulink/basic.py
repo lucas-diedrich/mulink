@@ -16,7 +16,7 @@ class MuLink:
         - pl: Plotting functionalities
     """
 
-    def __init__(self, mdata: md.MuData):
+    def __init__(self, mdata: md.MuData) -> None:
         self._obj = mdata
 
     def add_link(self, link: csr_matrix, *, key: str = "feature_mapping") -> None:

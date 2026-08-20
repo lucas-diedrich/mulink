@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 import mulink  # noqa: F401 — registers the namespace
-from mulink.query import get_ancestors, get_descendants
+from mulink.query import filter_modality_members, get_ancestors, get_descendants
 
 
 @pytest.fixture
@@ -66,6 +66,31 @@ class TestGetAncestors:
         assert_array_equal(result, expected_result_indices)
 
 
+class TestFilterModalityMembers:
+    """Test that modality member filtering works correctly"""
+
+    @pytest.mark.parametrize(
+        ("vertices", "modalities", "expected_results"),
+        [
+            (np.array([0, 1, 2, 3]), ["rna", "prot"], np.array([0, 1, 2, 3])),  # Keep all, explicit
+            (np.array([0, 1, 2, 3]), ["rna"], np.array([0, 1])),  # Keep RNA only (first modality)
+            (np.array([0, 1, 2, 3]), ["prot"], np.array([2, 3])),  # Keep Proteins only (second modality)
+            (np.array([0]), ["rna"], np.array([0])),  # Feature is in modality
+            (np.array([0]), ["prot"], np.array([])),  # Feature is not in modality
+        ],
+    )
+    def test_filter_modality_members(
+        self,
+        simple_mudata: md.MuData,
+        vertices: np.ndarray,
+        modalities: str | list[str] | None,
+        expected_results: np.ndarray,
+    ) -> None:
+        result = filter_modality_members(vertices=vertices, varmap=simple_mudata.varmap, mods=modalities)
+
+        assert_array_equal(result, expected_results)
+
+
 class TestQueryDescendants:
     def test_single_feature_string(self, simple_mudata) -> None:
         result = simple_mudata.link.query.descendants("gene_A")
@@ -107,6 +132,25 @@ class TestQueryDescendants:
 
         assert_array_equal(sorted(result.var_names), ["prot_C", "prot_D"])
 
+    @pytest.mark.parametrize(
+        ("query", "mods", "expected_features"),
+        [
+            # Default (all)
+            (["gene_A", "gene_B"], None, ["gene_A", "gene_B", "prot_C", "prot_D"]),
+            # Default (explicit)
+            (["gene_A", "gene_B"], ["rna", "prot"], ["gene_A", "gene_B", "prot_C", "prot_D"]),
+            # Protein only
+            (["gene_A", "gene_B"], ["prot"], ["prot_C", "prot_D"]),
+            # RNA only
+            (["gene_A", "gene_B"], ["rna"], ["gene_A", "gene_B"]),
+        ],
+    )
+    def test_restricted_mods(self, simple_mudata, query, mods, expected_features) -> None:
+        """Test that only specific modalities can be returned"""
+        result = simple_mudata.link.query.descendants(query, include_self=True, include_mods=mods)
+
+        assert_array_equal(sorted(result.var_names), expected_features)
+
 
 class TestQueryAncestors:
     def test_single_feature(self, simple_mudata):
@@ -143,3 +187,22 @@ class TestQueryAncestors:
         result = n_to_m_mudata.link.query.ancestors("prot_D", include_self=False)
 
         assert_array_equal(sorted(result.var_names), ["gene_A", "gene_B"])
+
+    @pytest.mark.parametrize(
+        ("query", "mods", "expected_features"),
+        [
+            # Default (all)
+            ("prot_C", None, ["gene_A", "prot_C"]),
+            # Default (explicit)
+            ("prot_C", ["rna", "prot"], ["gene_A", "prot_C"]),
+            # Protein only
+            ("prot_C", ["prot"], ["prot_C"]),
+            # RNA only
+            ("prot_C", ["rna"], ["gene_A"]),
+        ],
+    )
+    def test_restricted_mods(self, simple_mudata, query, mods, expected_features) -> None:
+        """Test that only specific modalities can be returned"""
+        result = simple_mudata.link.query.ancestors(query, include_self=True, include_mods=mods)
+
+        assert_array_equal(sorted(result.var_names), expected_features)

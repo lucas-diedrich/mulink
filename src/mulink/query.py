@@ -5,12 +5,13 @@ from collections.abc import Callable, Iterable
 import mudata as md
 import numpy as np
 from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import breadth_first_order
 
 
 def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
-    """Get all direct descendants for a feature or a list of features
+    """Get all descendants for a feature or a list of features
 
-    A direct descendants represents a vertix that can be reached by a single hop along the
+    Descendants represent vertices that can be reached from a node along the
     edge directionality.
 
     Parameters
@@ -23,34 +24,49 @@ def get_descendants(vertices: int | Iterable[int], adjacency_matrix: csr_matrix)
 
     Returns
     -------
-    List of direct successors of the provided vertices
+    List of successors of the provided vertices
     """
-    # For an adjacency matrix following networkx convention, finding
-    # all successors of a vertix corresponds to finding the `columns` containing nonzero values
-    # in the `row` corresponding to the vertix
-    _, cols = adjacency_matrix[vertices, :].nonzero()
+    vertices = [vertices] if isinstance(vertices, int) else vertices
+
+    # Exclude self (first node in results as results represent a tree)
+    # This is necessary to allow for the option to exclude self from queries
+    descendants = np.concatenate(
+        [
+            breadth_first_order(adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)[1:]
+            for vertix in vertices
+        ]
+    )
 
     # N:M mapping might yield redundant features - only return unique features
-    return np.unique(cols)
+    return np.unique(descendants)
 
 
 def get_ancestors(vertices: int | Iterable[int], adjacency_matrix: csr_matrix) -> np.ndarray:
-    """Get all direct ancestors for a feature or a list of features
+    """Get all ancestors for a feature or a list of features
 
-    A direct ancestors represents a vertix that can be reached by a single hop against
+    A direct ancestors represents a vertix that can be reached from a node against the
     edge directionality.
 
     Returns
     -------
-    List of direct ancestors of the provided vertices
+    List of ancestors of the provided vertices
     """
-    # For an adjacency matrix following networkx convention, finding
-    # all ancestors of a vertix corresponds to finding the `rows` containing nonzero values
-    # in the `column` corresponding to the vertix
-    rows, _ = adjacency_matrix[:, vertices].nonzero()
+    vertices = [vertices] if isinstance(vertices, int) else vertices
+
+    # Transpose adjacency matrix so that edge directions become inverted.
+    # scipy converts to CSR in `breadth_first_order`, so this prevents repetitive conversions
+    # Exclude self (first node in results as results represent a tree)
+    # This is necessary to allow for the option to exclude self from queries
+    inverted_adjacency_matrix = csr_matrix(adjacency_matrix.T)
+    ancestors = np.concatenate(
+        [
+            breadth_first_order(inverted_adjacency_matrix, i_start=vertix, directed=True, return_predecessors=False)[1:]
+            for vertix in vertices
+        ]
+    )
 
     # N:M mapping might yield redundant features - only return unique features
-    return np.unique(rows)
+    return np.unique(ancestors)
 
 
 class QueryAccessor:
@@ -76,7 +92,7 @@ class QueryAccessor:
         result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
 
         if include_self:
-            result_indices = np.concatenate([query_indices, result_indices])
+            result_indices = np.union1d(result_indices, query_indices)
 
         return self._mdata[:, self._mdata.var_names[result_indices]]
 
@@ -87,7 +103,7 @@ class QueryAccessor:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct descendants of features
+        """Get descendants of features
 
         Examples
         --------
@@ -114,7 +130,7 @@ class QueryAccessor:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct ancestors of features
+        """Get ancestors of features
 
         Examples
         --------

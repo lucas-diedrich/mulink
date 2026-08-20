@@ -17,7 +17,7 @@ def _generate_dag(
     *,
     extra_edge_probability: float | None = 0.2,
     extra_edge_levels: list[int] | None = None,
-    transitive_closure: bool = True,
+    transitive_closure: bool = False,
     rng: Generator | None = None,
 ) -> tuple[nx.DiGraph, dict[int, int]]:
     """Generate a hierarchical directed acyclic graph (DAG), starting from a tree.

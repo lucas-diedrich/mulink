@@ -99,7 +99,7 @@ class QueryAccessor:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct descendants of features
+        """Get descendants of features
 
         Examples
         --------
@@ -126,7 +126,7 @@ class QueryAccessor:
         key: str = "feature_mapping",
         include_self: bool = True,
     ) -> md.MuData:
-        """Get direct ancestors of features
+        """Get ancestors of features
 
         Examples
         --------

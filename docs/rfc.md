@@ -203,7 +203,7 @@ If only explicit mappings between a subset of modalities are desired, the rest o
 
 ### Querying
 
-Given the directed graph structure, we enable querying of **direct** [descendant nodes](#descendant--ancestor) and [ancestor nodes](#descendant--ancestor).
+Given the directed graph structure, we enable querying of  [descendant nodes](#descendant--ancestor) and [ancestor nodes](#descendant--ancestor).
 
 This returns a mudata object containing all observations but only the relevant subset of features.
 
@@ -226,9 +226,23 @@ assert "feature1" in subset.var_names
 assert "feature2" in subset.var_names
 ```
 
+From version `0.0.2` on, the querying steps supports multi-hop traversal and restricting the querying to certain modalities
+
+
+```python
+mdata.link.query_ancestors(["feature1", "feature2"], include_self=True, include_mods=["mod1"])
+# > returns mdata subset that includes feature1, feature2 and their ancestors, but only those in mod1
+
+assert mdata.n_obs == subset.n_obs
+assert mdata.n_obs == subset.n_obs
+assert "feature1" in subset.var_names
+assert "feature2" in subset.var_names
+assert mdata.mod["mod2"].n_vars == 0 # query excluded features from other modalities
+```
+
 A specific modality can be extracted as `anndata.AnnData` object from these subsets with the existing `mudata` syntax:
 
-```
+```python
 subset.mod["mod"]
 ```
 
@@ -252,11 +266,7 @@ flowchart TD
 
 #### Multi-hop traversal
 
-> ![ Note ]
-> Work in progress
-
-Currently, we only support querying for direct ancestors.
-These means that in hierarchical structures, the graph should be **transitively closed**.
+From version `0.0.2` on, we support multihop traversals.
 
 
 ### Aggregation

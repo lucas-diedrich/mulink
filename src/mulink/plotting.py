@@ -74,7 +74,7 @@ class PlotAccessor:
         if ax is None:
             _, ax = plt.subplots(1, 1)
 
-        dag = dag = nx.from_pandas_adjacency(
+        dag = nx.from_pandas_adjacency(
             self._link.link(key=key),
             create_using=nx.DiGraph,
         )

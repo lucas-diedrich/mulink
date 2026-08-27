@@ -69,8 +69,8 @@ def n_to_m_mudata() -> md.MuData:
     return mdata
 
 
-@pytest.fixture
-def simple_hierarchical_mudata() -> md.MuData:
+@pytest.fixture(params=[{"linkage_dtype": np.int32}, {"linkage_dtype": np.float64}])
+def simple_hierarchical_mudata(request) -> md.MuData:
     """MuData with 3 hierarchical levels A->B->C"""
     level0 = ad.AnnData(
         X=np.array([[1], [2]]),
@@ -92,5 +92,7 @@ def simple_hierarchical_mudata() -> md.MuData:
 
     mdata = md.MuData({"level0": level0, "level1": level1, "level2": level2})
     # var_names: [A, B, C, D, E, F]
-    mdata.varp["feature_mapping"] = csr_matrix(np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]]))
+    mdata.varp["feature_mapping"] = csr_matrix(
+        np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]], dtype=request.param["linkage_dtype"])
+    )
     return mdata

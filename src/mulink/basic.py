@@ -31,8 +31,9 @@ class MuLink:
         key
             Key of feature mapping matrix in `.varp` to use.
         """
-        return pd.DataFrame.sparse.from_spmatrix(
-            self._obj.varp[key], index=self._obj.var_names, columns=self._obj.var_names
+        matrix = self._obj.varp[key]
+        return pd.DataFrame.sparse.from_spmatrix(matrix, index=self._obj.var_names, columns=self._obj.var_names).astype(
+            pd.SparseDtype(matrix.dtype, fill_value=0)
         )
 
     @property

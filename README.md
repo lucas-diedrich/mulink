@@ -1,5 +1,6 @@
 # mulink
 
+[![codecov](https://codecov.io/gh/lucas-diedrich/mulink/graph/badge.svg?token=B6T1BI2QNR)](https://codecov.io/gh/lucas-diedrich/mulink)
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
 
@@ -82,5 +83,4 @@ This project was started at the [scverse proteomics hackathon in Berlin 2026](ht
 [changelog]: https://github.com/lucas-diedrich/mulink/releases
 [api documentation]: https://mulink.readthedocs.io/en/latest/api.html
 [Design Document]: https://mulink.readthedocs.io/en/latest/rfc.html
-
 [pypi]: https://pypi.org/project/mulink

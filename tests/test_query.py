@@ -151,6 +151,13 @@ class TestQueryDescendants:
 
         assert_array_equal(sorted(result.var_names), expected_features)
 
+    @pytest.mark.parametrize("missing_query", ["does not exist", ["does not exist"]])
+    def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
+        """Test that missing feature raises an informative KeyError"""
+
+        with pytest.raises(KeyError, match="is missing"):
+            simple_mudata.link.query.descendants(missing_query)
+
 
 class TestQueryAncestors:
     def test_single_feature(self, simple_mudata):
@@ -206,3 +213,10 @@ class TestQueryAncestors:
         result = simple_mudata.link.query.ancestors(query, include_self=True, include_mods=mods)
 
         assert_array_equal(sorted(result.var_names), expected_features)
+
+    @pytest.mark.parametrize("missing_query", ["does not exist", ["does not exist"]])
+    def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
+        """Test that missing feature raises an informative KeyError"""
+
+        with pytest.raises(KeyError, match="is missing"):
+            simple_mudata.link.query.ancestors(missing_query)

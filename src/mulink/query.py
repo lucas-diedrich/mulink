@@ -112,6 +112,8 @@ class QueryAccessor:
         features = [features] if isinstance(features, str) else features
         query_indices = self._mdata.var_names.get_indexer(features)
 
+        self._raise_on_missing(indexer=query_indices, features=features)
+
         result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
 
         if include_self:
@@ -197,3 +199,12 @@ class QueryAccessor:
         return self._query(
             query_func=get_ancestors, features=features, key=key, include_self=include_self, mods=include_mods
         )
+
+    def _raise_on_missing(self, indexer: np.ndarray, features: list) -> None:
+        missing_indices = (indexer == -1).flatten()
+
+        if np.any(missing_indices):
+            missing_labels = [
+                feature for feature, missing_index in zip(features, missing_indices, strict=True) if missing_index
+            ]
+            raise KeyError(f"Labels {missing_labels} are missing")

@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 import mulink  # noqa: F401 — registers the namespace
-from mulink.query import filter_modality_members, get_ancestors, get_descendants
+from mulink.query import _raise_on_missing, filter_modality_members, get_ancestors, get_descendants
 
 
 @pytest.fixture
@@ -91,6 +91,21 @@ class TestFilterModalityMembers:
         assert_array_equal(result, expected_results)
 
 
+class TestRaiseOnMissing:
+    @pytest.mark.parametrize(
+        argnames=("indexer", "labels", "expected_missing"),
+        argvalues=[
+            (np.array([-1]), ["A"], ["A"]),
+            (np.array([-1, -1]), ["A", "B"], ["A", "B"]),
+            (np.array([-1, 0]), ["A", "B"], ["A"]),
+        ],
+        ids=("missing", "multiple_missing", "partial_miss"),
+    )
+    def test__raise_on_missing(self, indexer: np.ndarray, labels: list[str], expected_missing: str) -> None:
+        with pytest.raises(KeyError, match=str(expected_missing)):
+            _raise_on_missing(indexer=indexer, labels=labels)
+
+
 class TestQueryDescendants:
     def test_single_feature_string(self, simple_mudata) -> None:
         result = simple_mudata.link.query.descendants("gene_A")
@@ -151,6 +166,13 @@ class TestQueryDescendants:
 
         assert_array_equal(sorted(result.var_names), expected_features)
 
+    @pytest.mark.parametrize("missing_query", ["does not exist", ["does not exist"]])
+    def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
+        """Test that missing feature raises an informative KeyError"""
+
+        with pytest.raises(KeyError, match="missing"):
+            simple_mudata.link.query.descendants(missing_query)
+
 
 class TestQueryAncestors:
     def test_single_feature(self, simple_mudata):
@@ -206,3 +228,10 @@ class TestQueryAncestors:
         result = simple_mudata.link.query.ancestors(query, include_self=True, include_mods=mods)
 
         assert_array_equal(sorted(result.var_names), expected_features)
+
+    @pytest.mark.parametrize("missing_query", ["does not exist", ["does not exist"]])
+    def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
+        """Test that missing feature raises an informative KeyError"""
+
+        with pytest.raises(KeyError, match="missing"):
+            simple_mudata.link.query.ancestors(missing_query)

@@ -91,6 +91,30 @@ def filter_modality_members(vertices: Iterable[int], varmap: Mapping, mods: Iter
     return vertices[np.isin(vertices, allowed_indices)]
 
 
+def _raise_on_missing(indexer: np.ndarray, labels: list[str]) -> None:
+    """Raise informative error if a feature is missing
+
+    Parameters
+    ----------
+    indexer
+        Numpy array representing the position of labels in a :class:`pandas.Index`
+    labels
+        List of labels
+
+    Raises
+    ------
+    KeyError
+        If a label is missing
+    """
+    missing_indices = indexer == -1
+
+    if np.any(missing_indices):
+        missing_labels = [
+            feature for feature, missing_index in zip(labels, missing_indices, strict=True) if missing_index
+        ]
+        raise KeyError(f"The index is missing the following labels: `{missing_labels}`")
+
+
 class QueryAccessor:
     """Query functionality for mulink"""
 
@@ -111,6 +135,8 @@ class QueryAccessor:
 
         features = [features] if isinstance(features, str) else features
         query_indices = self._mdata.var_names.get_indexer(features)
+
+        _raise_on_missing(indexer=query_indices, labels=features)
 
         result_indices = query_func(vertices=query_indices, adjacency_matrix=adjacency_matrix)
 

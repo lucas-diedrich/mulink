@@ -155,7 +155,7 @@ class TestQueryDescendants:
     def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
         """Test that missing feature raises an informative KeyError"""
 
-        with pytest.raises(KeyError, match="is missing"):
+        with pytest.raises(KeyError, match="missing"):
             simple_mudata.link.query.descendants(missing_query)
 
 
@@ -218,5 +218,5 @@ class TestQueryAncestors:
     def test_missing_raises_key_error(self, simple_mudata, missing_query) -> None:
         """Test that missing feature raises an informative KeyError"""
 
-        with pytest.raises(KeyError, match="is missing"):
+        with pytest.raises(KeyError, match="missing"):
             simple_mudata.link.query.ancestors(missing_query)

@@ -54,3 +54,9 @@ def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs:
     assert set(mdata.mod.keys()) == expected_modality_names
     assert mdata.shape == (n_obs, expected_n_vars)
     assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.varp[varp_key], create_using=nx.DiGraph))
+
+
+@pytest.mark.parametrize(("n_mod", "extra_edge_levels"), [(1, [1]), (3, [3, 2]), (3, [3])])
+def test_hierarchical_mudata__raise_value_error(n_mod: int, extra_edge_levels: list[int]):
+    with pytest.raises(ValueError, match="must only contain levels from"):
+        hierarchical_mudata(n_mod=n_mod, extra_edge_levels=extra_edge_levels)

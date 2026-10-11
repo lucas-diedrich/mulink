@@ -305,7 +305,7 @@ The constraints would also have to be serializable, e.g. in the `mdata.uns` attr
 
 
 
-### Encoding and serialization
+### Schema, Encoding and serialization
 
 > ![ Note ]
 > Work in progress

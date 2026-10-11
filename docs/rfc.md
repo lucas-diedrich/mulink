@@ -301,22 +301,41 @@ Potential constraints that could be enforced:
 - hierarchy: Features from one modality might only be allowed to map to features from a subset of other modalities
 
 As the package should support various use cases, the enforcement of these constraints will likely have to be context-depedent and configurable.
-The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute.
+The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
 
 
 
 ### Schema, Encoding and serialization
 
+Contributors: Ilan Gold (@ilan-gold), Lucas Marconato (@lucamarconato), Lucas Diedrich (@lucas-diedrich)
+
 > ![ Note ]
 > Work in progress
 
-Some package-specific functionalities might be facilitated by storing additional metadata with the feature mapping. This might include
+Depending on the specific context, links between `mod` layers might represent different semantic contexts, apply to observations or features, and might have different properties/constraints. This link-associated metadata should get encoded.
 
-- indicator that the adjacency matrix conforms with mulink conventions
-- versioning
-- encoding of additional constraints/validations
+#### Included information
+Information that **should** be included:
+
+Globally:
+
+- Version of schema
+
+Per link:
+- MUST: Axis of links (`.obs`/`.var`)
+- MUST: Name of link-layer in pairwise-layer slot.
+- OPTIONAL: Involved modalities
+- OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
+- OPTIONAL: Semantics (meaning) of link
 
 
+#### Schema
+
+- Links should be stored implicilty to facilitate the extension of the schema (see [@ilan-gold's PR comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184))
+
+#### Versioning and distribution of metadata schema
+
+MuLink defines the schema as pydantic model. The schema is automatically deployed to the documentation page under `mulink.readthedocs.io/en/<version|latest>/link-schema.json`
 
 ## Non-goals
 

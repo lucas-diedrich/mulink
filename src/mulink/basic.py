@@ -35,13 +35,13 @@ class MuLink:
             Passed to :class:`mulink.schema.LinkSchema` and added to `mdata.uns["mulink"]`
         """
         # TODO: currently only `var` axis supported
-        annotation = LinkSchema(key=key, axis="var", **link_properties)
+        annotation = LinkSchema(axis="var", **link_properties)
 
         if self._obj.uns.get(MuLinkSchema._MULINK_KEY) is None:
-            schema = MuLinkSchema(links=[annotation])
+            schema = MuLinkSchema(links={key: annotation})
         else:
             schema = MuLinkSchema.from_mudata(self._obj)
-            schema.add_link(link=annotation)
+            schema.add_link(key=key, link=annotation)
 
         self._obj.varp[key] = csr_matrix(link)
         schema.to_mudata(mdata=self._obj)

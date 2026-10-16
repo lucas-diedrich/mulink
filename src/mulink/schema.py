@@ -1,6 +1,7 @@
+from collections.abc import KeysView
 from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
-from pydantic import AfterValidator, BaseModel, Field, field_validator
+from pydantic import AfterValidator, BaseModel, Field
 
 if TYPE_CHECKING:
     import mudata as md
@@ -27,23 +28,23 @@ def mudata_axis(axis: str) -> str:
 
 # TODO: Versioning
 class LinkSchema(BaseModel):
-    """Definition of a single Link"""
+    """Metadata of a single link
 
-    key: str
+    The link's name is not part of the model, it is the key of the link in :attr:`MuLinkSchema.links`.
+    """
+
     axis: Annotated[Literal["var"], AfterValidator(mudata_axis)] = Field(
         ..., description="Axis of MuData object to which the link applies. One of `obs` or `var`."
     )
     semantics: str | None = Field(None, description="Semantic meaning of link.")
 
-    def validate_pkey_exists(self, mdata: "md.MuData") -> None:
-        """Validate that key exists in pairwise mapping of mudata object"""
-        if self.key not in mdata.varp:
-            raise KeyError(f"Passed `key={self.key}` does not exist")
-
 
 # TODO: Versioning
 class MuLinkSchema(BaseModel):
-    """Metadata schema for MuLink links"""
+    """Metadata schema for MuLink links
+
+    Supports dict-style access to links by name: `schema.keys()`, `schema[key]` and `key in schema`.
+    """
 
     model_config = {"extra": "forbid"}
 
@@ -54,29 +55,53 @@ class MuLinkSchema(BaseModel):
         description="Version of schema",
         pattern=_MULINK_VERSION_REGEX,
     )
-    links: list[LinkSchema] = Field(..., description="Link definitions.")
+    links: dict[str, LinkSchema] = Field(
+        ...,
+        description="Link definitions, corresponding to the link-name in the pairwise attribute (e.g. `mdata.varp`).",
+    )
 
-    @field_validator("links")
-    def link_keys_unique(cls, links: list[LinkSchema]) -> list[LinkSchema]:
-        """MuLink keys must be unique in the object"""
-        # TODO: Evaluate whether obs/var should be separately enforced
-        if len({link.key for link in links}) != len(links):
-            raise ValueError("Redundant links")
-        return links
+    def keys(self) -> KeysView[str]:
+        """Names of all registered links"""
+        return self.links.keys()
+
+    def __getitem__(self, key: str) -> LinkSchema:
+        return self.links[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.links
 
     def validate_pkeys_exist(self, mdata: "md.MuData") -> None:
-        """Validate that added modalities exist in mudata object"""
-        for link in self.links:
-            link.validate_pkey_exists(mdata)
+        """Validate that every link exists in the pairwise attribute of its axis
 
-    def add_link(self, link: LinkSchema) -> None:
-        """Add a link to the model"""
-        new_link = LinkSchema.model_validate(link)
+        Raises
+        ------
+        KeyError
+            If a link name is missing in the pairwise attribute.
+        """
+        for key, link in self.links.items():
+            pairwise_attribute = f"{link.axis}p"
+            if key not in getattr(mdata, pairwise_attribute):
+                raise KeyError(f"Link `{key}` does not exist in `mdata.{pairwise_attribute}`")
 
-        if any(new_link.key == link.key for link in self.links):
-            raise ValueError(f"Adding redundant key. `key={new_link.key}` is already taken.")
+    def add_link(self, key: str, link: LinkSchema) -> None:
+        """Add a link to the model
 
-        self.links.append(new_link)
+        Parameters
+        ----------
+        key
+            Name of the link, identical to its key in the pairwise attribute.
+        link
+            Metadata of the link.
+
+        Raises
+        ------
+        ValueError
+            If a link with the same name already exists.
+        """
+        if key in self.links:
+            raise ValueError(f"Adding redundant key. `key={key}` is already taken.")
+
+        self.links[key] = LinkSchema.model_validate(link)
 
     def to_mudata(self, mdata: "md.MuData") -> None:
         """Add model to mudata object inplace"""

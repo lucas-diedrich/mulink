@@ -337,6 +337,14 @@ In the future:
 - OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
 
 
+**Excluded fields**
+
+*Involved modalities.* Earlier proposals included a field listing the modalities involved in a link (e.g.
+`{"mods": ["mod1", "mod2"]}`), or an explicit source and target modality (e.g. `{"from": "mod1", "to":
+"mod2"}`). We deliberately do not include such a field. The adjacency matrix in `mdata.varp`/`mdata.obsp` always
+spans all features of all modalities, so the graph formally includes every modality and every pairwise mapping
+between them.
+In the planned constraints field (see [Future constraints](#future-constrains)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This is a constraint on the graph structure, not a property of the link.
 
 
 ##### Versioning

@@ -352,19 +352,16 @@ mdata.uns
 {
     "mulink": {
         "version": "1-0-0",
-        "links": [
-            {
-                "key": "feature_mapping",
+        "links":
+            "feature_mapping_1": {
                 "axis": "var",
                 "semantics": "aggregates_to"
             },
-            {
-                "key": "feature_mapping_3",
+            "feature_mapping_2": {
                 "axis": "var",
                 "semantics": None
             },
-            {
-                "key": "feature_mapping_2",
+            "feature_mapping_3": {
                 "axis": "var",
                 "semantics": "maps_to"
             },

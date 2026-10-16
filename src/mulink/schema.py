@@ -1,4 +1,3 @@
-import re
 from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, field_validator
@@ -7,20 +6,13 @@ if TYPE_CHECKING:
     import mudata as md
 
 
-def mulink_schema_version(version: str):
-    """Semantic vesioning with <major>.<minor>.<patch> syntax
+_MULINK_VERSION_REGEX: str = r"^(0|[1-9][0-9]*)-(0|[1-9][0-9]*)-(0|[1-9][0-9]*)$"
+"""Version of mulink schema (SchemaVer versioning <MODEL>-<REVISION>-<ADDITION>)
 
-    Notes
-    -----
-    Update <major> if the schema structure significantly changes (e.g. nesting structure).
-    Update <minor> if downstream incompatible changes occur (e.g. key renaming) occur.
-    Update <patch> if downstream compatible changes (new keys) occur.
-    """
-    VERSION_REGEX = r"^(?!0\.0\.0$)(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"
-
-    if not re.match(VERSION_REGEX, version):
-        raise ValueError(f"{version} did not match expected structure: {VERSION_REGEX}")
-    return version
+MODEL when you make a breaking schema change which will prevent interaction with any historical data
+REVISION when you make a schema change which may prevent interaction with some historical data
+ADDITION when you make a schema change that is compatible with all historical data
+"""
 
 
 def mudata_axis(axis: str) -> str:
@@ -36,30 +28,30 @@ class LinkSchema(BaseModel):
     """Definition of a single Link"""
 
     key: str
-    axis: Annotated[str, AfterValidator(mudata_axis)] = Field(
+    axis: Annotated[Literal["var"], AfterValidator(mudata_axis)] = Field(
         ..., description="Axis of MuData object to which the link applies. One of `obs` or `var`."
     )
-    mods: Literal["all"] | list[str] = Field("all", description="Included modalities (`.mod`) in link.")
-    semantic: str | None = Field(None, description="Semantic meaning of link.")
+    semantics: str | None = Field(None, description="Semantic meaning of link.")
 
-    def validate_modalities_exist(self, mdata: "md.MuData") -> None:
-        """Validate that added modalities exist in mudata object"""
-        if len(mdata.mod_names) == 0:
-            raise KeyError("No modalities in mudata object. Cannot add links.")
-        if self.mods == "all":
-            return
-        for key in self.mods:
-            if key not in mdata.mod_names:
-                raise KeyError(f"Key {key} does not exist")
+    def validate_pkey_exists(self, mdata: "md.MuData") -> None:
+        """Validate that key exists in pairwise mapping of mudata object"""
+        if self.key not in mdata.varp:
+            raise KeyError(f"Passed `key={self.key}` does not exist")
 
 
 # TODO: Versioning
 class MuLinkSchema(BaseModel):
-    """Schema for MuLink"""
+    """Metadata schema for MuLink links"""
+
+    model_config = {"extra": "forbid"}
 
     _MULINK_KEY: ClassVar = "mulink"
 
-    version: Annotated[str, AfterValidator(mulink_schema_version)] = Field("v0.0.1", description="Version of schema")
+    version: str = Field(
+        "1-0-0",
+        description="Version of schema",
+        pattern=_MULINK_VERSION_REGEX,
+    )
     links: list[LinkSchema] = Field(..., description="Link definitions.")
 
     @field_validator("links")
@@ -70,10 +62,10 @@ class MuLinkSchema(BaseModel):
             raise ValueError("Redundant links")
         return links
 
-    def validate_modalities_exist(self, mdata: "md.MuData") -> None:
+    def validate_pkeys_exist(self, mdata: "md.MuData") -> None:
         """Validate that added modalities exist in mudata object"""
         for link in self.links:
-            link.validate_modalities_exist(mdata)
+            link.validate_pkey_exists(mdata)
 
     def add_link(self, link: LinkSchema) -> None:
         """Add a link to the model"""
@@ -86,10 +78,14 @@ class MuLinkSchema(BaseModel):
 
     def to_mudata(self, mdata: "md.MuData") -> None:
         """Add model to mudata object inplace"""
-        self.validate_modalities_exist(mdata)
-        mdata.uns[self._MULINK_KEY] = self.model_dump(mode="python")
+        self.validate_pkeys_exist(mdata)
+
+        mdata.uns[self._MULINK_KEY] = self.model_dump(mode="json")
 
     @classmethod
     def from_mudata(cls, mdata: "md.MuData") -> "MuLinkSchema":
         """Initialize from mudata object"""
-        return cls(**mdata.uns[cls._MULINK_KEY])
+        if cls._MULINK_KEY not in mdata.uns:
+            raise KeyError("Expected link metadata in `mdata.uns['{cls._MULINK_KEY}']` but the key does not exist")
+
+        return cls.model_validate(mdata.uns[cls._MULINK_KEY])

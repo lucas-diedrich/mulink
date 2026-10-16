@@ -329,7 +329,7 @@ Globally:
 - Version of schema
 
 Per link:
-- MUST: Name of link-layer in pairwise-layer slot.
+- MUST: Name of link-layer in pairwise-layer slot. Link names MUST be unique across the dataset.
 - MUST: Axis of links (`.obs`/`.var`)
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
@@ -343,8 +343,14 @@ In the future:
 The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention.
 
 ##### Links
-Links should be stored implicilty to facilitate the extension of the schema (see [@ilan-gold's PR comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184))
+Links are stored as named entries in the `links` dictionary (see [@ilan-gold's comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184)).
+Each entry holds the metadata of one link and is keyed by the link's name, which is identical to its key in the pairwise attribute (`mudata.MuData.varp`).
+Link names are unique in the dataset. The name is equivalent to the slot name in the pairwise attribute.
 
+**Considered alternatives**
+
+- *Storing links as a list of records* (`[{"key": ..., "axis": ...}, ...]`). This was the original proposal, but mudata/anndata cannot serialize a list of dictionaries in `uns` to `.h5mu`/`.zarr`.
+- *Separate dictionaries per axis* (`{"var": {...}, "obs": {...}}`). This would make names unique only within an axis. However, every lookup would then need both the name and the axis, and identical names on both axes are rarely useful and potentially confusing.
 
 ##### Examples
 ```python

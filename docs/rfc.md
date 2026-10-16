@@ -314,29 +314,65 @@ Contributors: Ilan Gold (@ilan-gold), Lucas Marconato (@lucamarconato), Lucas Di
 
 Depending on the specific context, links between `mod` modalities might represent different semantic contexts, apply to observations or features, and might have different properties/constraints. This link-associated metadata should be encoded.
 
-#### Included information
+#### Location
+The link metadata is stored under the reserved `mulink` key in the `mudata.uns` attribute.
+
+**Considered alternatives**
+
+We considered storing the schema in the `.attrs` attribute of the respective `mudata.MuData.varp` element. This is, however, not directly accessible in memory, which means that the additional benefits from storing the metadata in `.uns` (autodiscovery, on-the-fly validation), would not be available.
+
+#### Stored information
+
 Information that **should** be included:
 
 Globally:
-
 - Version of schema
 
 Per link:
 - MUST: Axis of links (`.obs`/`.var`)
 - MUST: Name of link-layer in pairwise-layer slot.
-- OPTIONAL: Semantics (meaning) of link
+- OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
 In the future:
 - OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
 
 
-#### Schema
 
-- Links should be stored implicilty to facilitate the extension of the schema (see [@ilan-gold's PR comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184))
 
-#### Versioning and distribution of metadata schema
+##### Versioning
+The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention.
 
-MuLink defines the schema as pydantic model. The schema is automatically deployed to the documentation page under `mulink.readthedocs.io/en/<version|latest>/link-schema.json`
+##### Links
+Links should be stored implicilty to facilitate the extension of the schema (see [@ilan-gold's PR comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184))
+
+
+##### Examples
+```python
+mdata.uns
+{
+    "mulink": {
+        "version": "1-0-0",
+        "links": [
+            {
+                "key": "feature_mapping",
+                "axis": "var",
+                "semantics": "aggregates_to"
+            },
+            {
+                "key": "feature_mapping_3",
+                "axis": "var",
+                "semantics": None
+            },
+            {
+                "key": "feature_mapping_2",
+                "axis": "var",
+                "semantics": "maps_to"
+            },
+        ]
+    }
+}
+```
+
 
 ## Non-goals
 

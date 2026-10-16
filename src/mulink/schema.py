@@ -16,12 +16,13 @@ ADDITION when you make a schema change that is compatible with all historical da
 """
 
 _MULINK_SUPPORTED_AXES = ("var",)
+"""Supported axes in mulink"""
 
 
 def mudata_axis(axis: str) -> str:
     """Axis in MuData object"""
     if axis not in _MULINK_SUPPORTED_AXES:
-        raise ValueError(f"`axis` must be 'var', not '{axis}'")
+        raise ValueError(f"`axis` must be {_MULINK_SUPPORTED_AXES}, not '{axis}'")
 
     return axis
 

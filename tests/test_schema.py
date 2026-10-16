@@ -46,8 +46,8 @@ class TestLinkSchema:
     @pytest.mark.parametrize(
         "_input",
         [
-            {"key": "key", "axis": "var", "semantics": "aggregates_to"},
-            {"key": "key", "axis": "var", "semantics": None},
+            {"axis": "var", "semantics": "aggregates_to"},
+            {"axis": "var", "semantics": None},
         ],
         ids=("complete", "missing_semantics"),
     )
@@ -63,26 +63,13 @@ class TestLinkSchema:
         """Check that the LinkSchema fails if an incorrect axis is specified"""
 
         with pytest.raises(ValidationError):
-            LinkSchema.model_validate({"key": "key", "axis": axis, "semantics": None})
-
-    def test_validate_pkey_exists__succeeds(self, mdata_with_varp) -> None:
-        """Test that existin"""
-
-        assert "feature_mapping" in mdata_with_varp.varp.keys()
-
-        LinkSchema(key="feature_mapping", axis="var").validate_pkey_exists(mdata_with_varp)
-
-    @pytest.mark.parametrize(("_key",), [("missing_key",)])
-    def test_validate_pkey_exists__failes_missing_pkey(self, mdata_with_varp, _key) -> None:
-
-        with pytest.raises(KeyError):
-            LinkSchema(key=_key, axis="var").validate_pkey_exists(mdata_with_varp)
+            LinkSchema.model_validate({"axis": axis, "semantics": None})
 
 
 class TestMuLinkSchema:
-    """Test LinkSchema"""
+    """Test MuLinkSchema"""
 
-    @pytest.fixture(params=[{"key": "feature_mapping", "axis": "var"}])
+    @pytest.fixture(params=[{"axis": "var"}])
     def correct_link_schema(self, request):
         """Correct schema"""
         return request.param
@@ -92,8 +79,35 @@ class TestMuLinkSchema:
         return LinkSchema.model_validate(correct_link_schema).model_dump(mode="python")
 
     @pytest.fixture
-    def links(self, link) -> list[LinkSchema]:
-        return [link]
+    def links(self, link) -> dict[str, dict]:
+        return {"feature_mapping": link}
+
+    @pytest.fixture
+    def schema(self, links) -> MuLinkSchema:
+        return MuLinkSchema(version="1-0-0", links=links)
+
+    def test_mulinkschema_dict_access(self, schema) -> None:
+        assert set(schema.keys()) == {"feature_mapping"}
+        assert "feature_mapping" in schema
+        assert schema["feature_mapping"] == LinkSchema(axis="var")
+
+    def test_mulinkschema_add_link__succeeds(self, schema) -> None:
+        schema.add_link(key="new_link", link=LinkSchema(axis="var", semantics="maps_to"))
+
+        assert schema["new_link"].semantics == "maps_to"
+
+    def test_mulinkschema_add_link__fails_redundant_key(self, schema) -> None:
+        with pytest.raises(ValueError, match="already taken"):
+            schema.add_link(key="feature_mapping", link=LinkSchema(axis="var"))
+
+    def test_validate_pkeys_exist__succeeds(self, schema, mdata_with_varp) -> None:
+        schema.validate_pkeys_exist(mdata_with_varp)
+
+    def test_validate_pkeys_exist__fails_missing_pkey(self, mdata_with_varp) -> None:
+        schema = MuLinkSchema(links={"missing_key": LinkSchema(axis="var")})
+
+        with pytest.raises(KeyError, match="missing_key"):
+            schema.validate_pkeys_exist(mdata_with_varp)
 
     @pytest.mark.parametrize(
         "version",
@@ -133,9 +147,10 @@ class TestMuLinkSchema:
         [
             "incorrect_schema",
             {"key": "incorrect_schema"},
-            {"version": "1.0.0", "links": [{"key": "key", "axis": "obs"}]},
+            {"version": "1.0.0", "links": {"feature_mapping": {"axis": "var"}}},
+            {"version": "1-0-0", "links": [{"key": "feature_mapping", "axis": "var"}]},
         ],
-        ids=("string", "incorrect-dict", "wrong-version-schema"),
+        ids=("string", "incorrect-dict", "wrong-version-schema", "list-of-links"),
     )
     def test_mulinkschema_from_mudata__validation_fails(self, mdata_with_varp, link_metadata) -> None:
         """No mulink metadata available"""
@@ -161,7 +176,12 @@ class TestMuLinkSchema:
         """Test IO"""
         mdata = mdata_with_varp.copy()
         schema = MuLinkSchema(version="1-0-0", links=links)
+        write_path = tmp_path / "test.h5mu"
 
         schema.to_mudata(mdata)
 
-        mdata.write_h5mu(tmp_path / "test.h5mu")
+        mdata.write_h5mu(write_path)
+
+        new_mdata = md.read_h5mu(write_path)
+        new_schema = MuLinkSchema.from_mudata(new_mdata)
+        assert schema == new_schema

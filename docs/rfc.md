@@ -301,21 +301,88 @@ Potential constraints that could be enforced:
 - hierarchy: Features from one modality might only be allowed to map to features from a subset of other modalities
 
 As the package should support various use cases, the enforcement of these constraints will likely have to be context-depedent and configurable.
-The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute.
+The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
 
 
 
-### Encoding and serialization
+### Schema, Encoding and serialization
+
+Contributors: Ilan Gold (@ilan-gold), Lucas Marconato (@lucamarconato), Lucas Diedrich (@lucas-diedrich)
 
 > ![ Note ]
 > Work in progress
 
-Some package-specific functionalities might be facilitated by storing additional metadata with the feature mapping. This might include
+Depending on the specific context, links between `mod` modalities might represent different semantic contexts, apply to observations or features, and might have different properties/constraints. This link-associated metadata should be encoded.
 
-- indicator that the adjacency matrix conforms with mulink conventions
-- versioning
-- encoding of additional constraints/validations
+#### Location
+The link metadata is stored under the reserved `mulink` key in the `mudata.uns` attribute.
 
+**Considered alternatives**
+
+We considered storing the schema in the `.attrs` attribute of the respective `mudata.MuData.varp` element. This is, however, not directly accessible in memory, which means that the additional benefits from storing the metadata in `.uns` (autodiscovery, on-the-fly validation), would not be available.
+
+#### Stored information
+
+Information that **should** be included:
+
+Globally:
+- Version of schema
+
+Per link:
+- MUST: Name of link-layer in pairwise-layer slot. Link names MUST be unique across the dataset.
+- MUST: Axis of links (`.obs`/`.var`)
+- OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
+
+In the future:
+- OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
+
+
+**Excluded fields**
+
+*Involved modalities.* Earlier proposals included a field listing the modalities involved in a link (e.g.
+`{"mods": ["mod1", "mod2"]}`), or an explicit source and target modality (e.g. `{"from": "mod1", "to":
+"mod2"}`). We deliberately do not include such a field. The adjacency matrix in `mdata.varp`/`mdata.obsp` always
+spans all features of all modalities, so the graph formally includes every modality and every pairwise mapping
+between them.
+In the planned constraints field (see [Future constraints](#future-constrains)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This is a constraint on the graph structure, not a property of the link.
+
+
+##### Versioning
+The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention.
+
+##### Links
+Links are stored as named entries in the `links` dictionary (see [@ilan-gold's comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184)).
+Each entry holds the metadata of one link and is keyed by the link's name, which is identical to its key in the pairwise attribute (`mudata.MuData.varp`).
+Link names are unique in the dataset. The name is equivalent to the slot name in the pairwise attribute.
+
+**Considered alternatives**
+
+- *Storing links as a list of records* (`[{"key": ..., "axis": ...}, ...]`). This was the original proposal, but mudata/anndata cannot serialize a list of dictionaries in `uns` to `.h5mu`/`.zarr`.
+- *Separate dictionaries per axis* (`{"var": {...}, "obs": {...}}`). This would make names unique only within an axis. However, every lookup would then need both the name and the axis, and identical names on both axes are rarely useful and potentially confusing.
+
+##### Examples
+```python
+mdata.uns
+{
+    "mulink": {
+        "version": "1-0-0",
+        "links":
+            "feature_mapping_1": {
+                "axis": "var",
+                "semantics": "aggregates_to"
+            },
+            "feature_mapping_2": {
+                "axis": "var",
+                "semantics": None
+            },
+            "feature_mapping_3": {
+                "axis": "var",
+                "semantics": "maps_to"
+            },
+        ]
+    }
+}
+```
 
 
 ## Non-goals

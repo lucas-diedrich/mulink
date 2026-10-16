@@ -14,10 +14,12 @@ REVISION when you make a schema change which may prevent interaction with some h
 ADDITION when you make a schema change that is compatible with all historical data
 """
 
+_MULINK_SUPPORTED_AXES = ("var",)
+
 
 def mudata_axis(axis: str) -> str:
     """Axis in MuData object"""
-    if axis not in ("var",):
+    if axis not in _MULINK_SUPPORTED_AXES:
         raise ValueError(f"`axis` must be 'var', not '{axis}'")
 
     return axis

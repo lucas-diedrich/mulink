@@ -329,8 +329,8 @@ Globally:
 - Version of schema
 
 Per link:
-- MUST: Axis of links (`.obs`/`.var`)
 - MUST: Name of link-layer in pairwise-layer slot.
+- MUST: Axis of links (`.obs`/`.var`)
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
 In the future:

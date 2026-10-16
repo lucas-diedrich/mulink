@@ -312,7 +312,7 @@ Contributors: Ilan Gold (@ilan-gold), Lucas Marconato (@lucamarconato), Lucas Di
 > ![ Note ]
 > Work in progress
 
-Depending on the specific context, links between `mod` layers might represent different semantic contexts, apply to observations or features, and might have different properties/constraints. This link-associated metadata should get encoded.
+Depending on the specific context, links between `mod` modalities might represent different semantic contexts, apply to observations or features, and might have different properties/constraints. This link-associated metadata should be encoded.
 
 #### Included information
 Information that **should** be included:
@@ -324,9 +324,10 @@ Globally:
 Per link:
 - MUST: Axis of links (`.obs`/`.var`)
 - MUST: Name of link-layer in pairwise-layer slot.
-- OPTIONAL: Involved modalities
-- OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
 - OPTIONAL: Semantics (meaning) of link
+
+In the future:
+- OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
 
 
 #### Schema

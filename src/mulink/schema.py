@@ -114,6 +114,6 @@ class MuLinkSchema(BaseModel):
     def from_mudata(cls, mdata: "md.MuData") -> "MuLinkSchema":
         """Initialize from mudata object"""
         if cls._MULINK_KEY not in mdata.uns:
-            raise KeyError("Expected link metadata in `mdata.uns['{cls._MULINK_KEY}']` but the key does not exist")
+            raise KeyError(f"Expected link metadata in `mdata.uns['{cls._MULINK_KEY}']` but the key does not exist")
 
         return cls.model_validate(mdata.uns[cls._MULINK_KEY])

@@ -288,11 +288,11 @@ From version `0.0.2` on, we support multihop traversals.
 > ![ Note ]
 > Work in progress
 
-Currently, no validation or constraints are enfored for the adjacency matrix/graph, except for the shape (must be equivalent to the number of features in the mudata object $p \times p$)
+Currently, no validation or constraints are enforced for the adjacency matrix/graph, except for the shape (must be equivalent to the number of features in the mudata object $p \times p$)
 
-### Future constrains
+### Future constraints
 
-Potential constraints that could be enforced:
+Potential intended graph properties that a writer can declare and a reader can validate:
 
 - **minimal connectivity**: Every feature should contain at least one incoming or outgoing connection
 - **maximal connectivity**: Feature might only be allowed a maximum number of incoming/outgoing edges.
@@ -300,7 +300,7 @@ Potential constraints that could be enforced:
 - **self-referential**: Features should not map to features from the same modality
 - hierarchy: Features from one modality might only be allowed to map to features from a subset of other modalities
 
-As the package should support various use cases, the enforcement of these constraints will likely have to be context-depedent and configurable.
+As the package should support various use cases, the validation of these constraints will likely have to be context-dependent and configurable.
 The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
 
 
@@ -334,7 +334,7 @@ Per link:
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
 In the future:
-- OPTIONAL: Constraints on the graph structure (see [Future constraints](#future-constrains))
+- OPTIONAL: Intended constraints of the graph structure (see [Future constraints](#future-constraints)) that can be validated by readers.
 
 
 **Excluded fields**
@@ -344,7 +344,7 @@ In the future:
 "mod2"}`). We deliberately do not include such a field. The adjacency matrix in `mdata.varp`/`mdata.obsp` always
 spans all features of all modalities, so the graph formally includes every modality and every pairwise mapping
 between them.
-In the planned constraints field (see [Future constraints](#future-constrains)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This is a constraint on the graph structure, not a property of the link.
+In the planned constraints field (see [Future constraints](#future-constraints)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This expresses the writer's intent about which modalities edges are expected between; readers MAY validate the graph against it, but it is not required to interpret the link.
 
 
 ##### Versioning

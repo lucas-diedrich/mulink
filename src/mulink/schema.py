@@ -30,8 +30,6 @@ def supported_schema_version(version: str) -> str:
     ValueError
         If the version is not supported.
     """
-    # Strict, like spatialdata's format registry: data written with an unknown (e.g. newer) schema version is
-    # rejected instead of being interpreted with the current model.
     if version not in _SUPPORTED_SCHEMA_VERSIONS:
         raise ValueError(
             f"Unsupported mulink schema version '{version}'. Supported versions: {sorted(_SUPPORTED_SCHEMA_VERSIONS)}. "

@@ -172,4 +172,4 @@ def hierarchical_mudata(
     mlink = MuLink(mdata=mdata)
     mlink.add_link(link=adjacency_matrix, key=varp_key, semantics="aggregates_to")
 
-    return mlink
+    return mlink._obj

@@ -59,6 +59,17 @@ class MuLink:
             pd.SparseDtype(matrix.dtype, fill_value=0)
         )
 
+    def meta(self, key: str = "feature_mapping") -> LinkSchema:
+        """Returns the link metadata from the current object
+
+        Parameters
+        ----------
+        key
+            Key of feature mapping matrix in `.varp` to use.
+        """
+        schema = MuLinkSchema.from_mudata(self._obj)
+        return schema[key]
+
     @property
     def query(self):
         """Querying functionality"""

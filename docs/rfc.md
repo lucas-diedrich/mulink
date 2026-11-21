@@ -317,9 +317,19 @@ Depending on the specific context, links between `mod` modalities might represen
 #### Location
 The link metadata is stored under the reserved `mulink` key in the `mudata.uns` attribute.
 
+This keeps mulink objects fully compatible with the existing `mudata.{read,write}_{h5mu,zarr}` infrastructure and keeps the format open: users can register arbitrary matrices in `mdata.varp`/`mdata.obsp` as links without a dedicated container.
+
+Users are expected to access the metadata through the mulink API (`mdata.link.add_link`, `mdata.link.meta`) rather than through `mdata.uns` directly. This decouples the API from the storage location, so that the metadata can be moved, e.g. into a dedicated part of the `mudata` format, without breaking user code. Such a move would be signalled by a schema version bump (see [Versioning](#versioning)).
+
+**Known limitations**
+
+- The `mulink` key in `mdata.uns` is reserved and must not be used for other purposes.
+- `uns` is not serialized as JSON but as groups and arrays. Consequently, lists of dictionaries cannot be stored (see [Links](#links)), and lists of scalars are read back from disk as `numpy` arrays. The latter is handled by the validation of the pydantic model, which coerces arrays into lists.
+
 **Considered alternatives**
 
-We considered storing the schema in the `.attrs` attribute of the respective `mudata.MuData.varp` element. This is, however, not directly accessible in memory, which means that the additional benefits from storing the metadata in `.uns` (autodiscovery, on-the-fly validation), would not be available.
+- *`.attrs` of the pairwise element.* We considered storing the schema in the `.attrs` attribute of the respective `mudata.MuData.{obs,var}p` element. This is, however, not directly accessible in memory, which means that the additional benefits from storing the metadata in `.uns` (autodiscovery, on-the-fly validation), would not be available.
+- *Dedicated namespace or attribute.* The metadata could be stored in a dedicated, read-only attribute (e.g. `mdata.links`) that holds both the adjacency matrices and their metadata (see [@ilia-kats' comment](https://github.com/lucas-diedrich/mulink/pull/42#discussion_r4311392940)). This would restrict the registration of links to the mulink API and allow for validation upon registration (#22), but would require custom serialization logic and readers. As long as mulink is a separate package, we prefer the open approach. This option should be reconsidered if links become part of the `mudata` format.
 
 #### Stored information
 
@@ -330,7 +340,7 @@ Globally:
 
 Per link:
 - MUST: Name of link-layer in pairwise-layer slot. Link names MUST be unique across the dataset.
-- MUST: Axis of links (`.obs`/`.var`)
+- MUST: Axis of links (`.obs`/`.var`). For MuData objects with `axis=0` or `axis=1`, the axis of the links is implied by the axis of the MuData object. For MuData objects with `axis=-1`, both axes are shared, so links can be stored in either `.obsp` or `.varp`, and the axis must be stated per link.
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
 In the future:
@@ -352,7 +362,7 @@ The metadata schema is versioned according to the [`SchemVer`](https://snowplow.
 
 ##### Links
 Links are stored as named entries in the `links` dictionary (see [@ilan-gold's comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184)).
-Each entry holds the metadata of one link and is keyed by the link's name, which is identical to its key in the pairwise attribute (`mudata.MuData.varp`).
+Each entry holds the metadata of one link and is keyed by the link's name, which is identical to its key in the pairwise attribute (`mudata.MuData.{obs,var}p`).
 Link names are unique in the dataset. The name is equivalent to the slot name in the pairwise attribute.
 
 **Considered alternatives**
@@ -366,7 +376,7 @@ mdata.uns
 {
     "mulink": {
         "version": "1-0-0",
-        "links":
+        "links": {
             "feature_mapping_1": {
                 "axis": "var",
                 "semantics": "aggregates_to"
@@ -379,7 +389,7 @@ mdata.uns
                 "axis": "var",
                 "semantics": "maps_to"
             },
-        ]
+        }
     }
 }
 ```

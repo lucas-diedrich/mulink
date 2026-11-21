@@ -2,6 +2,7 @@ import anndata as ad
 import mudata as md
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_array_equal
 from scipy.sparse import csr_array
 
@@ -49,6 +50,12 @@ class TestAddLink:
         # New keys added
         assert "custom" in mdata.varp
         assert "custom" in mdata.uns["mulink"]["links"]
+
+    def test_add_link__wrong_axis_raises(self):
+        mdata = md.MuData(axis=1)  # shared variables
+
+        with pytest.raises(NotImplementedError, match="Shared axis"):
+            mdata.link.add_link(link=csr_array([[]]))
 
 
 class TestLink:

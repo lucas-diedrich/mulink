@@ -7,6 +7,9 @@ from scipy.sparse import csr_array
 
 from mulink.schema import LinkSchema, MuLinkSchema
 
+_MULINK_SUPPORTED_AXES = (0,)
+"""Supported axis of mudata objects"""
+
 
 @register_mudata_namespace("link")
 class MuLink:
@@ -34,6 +37,9 @@ class MuLink:
             Annotation of link.
             Passed to :class:`mulink.schema.LinkSchema` and added to `mdata.uns["mulink"]`
         """
+        if self._obj.axis not in (_MULINK_SUPPORTED_AXES):
+            raise NotImplementedError(f"Shared axis {self._obj.axis} in mudata object is not supported.")
+
         annotation = LinkSchema(**link_properties)
 
         if self._obj.uns.get(MuLinkSchema._MULINK_KEY) is None:
@@ -64,7 +70,11 @@ class MuLink:
         Parameters
         ----------
         key
-            Key of feature mapping matrix in `.varp` to use.
+            Name of the link.
+
+        Returns
+        -------
+        The LinkSchema of the link `key`
         """
         schema = MuLinkSchema.from_mudata(self._obj)
         return schema[key]

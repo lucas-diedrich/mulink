@@ -18,17 +18,14 @@ ADDITION when you make a schema change that is compatible with all historical da
 
 # TODO: Versioning
 class LinkSchema(BaseModel):
-    """Metadata of a single link
-
-    The link's name is not part of the model, it is the key of the link in :attr:`MuLinkSchema.links`.
-    """
+    """Metadata of a single link"""
 
     semantics: str | None = Field(None, description="Semantic meaning of link.")
 
 
 # TODO: Versioning
 class MuLinkSchema(BaseModel):
-    """Metadata schema for MuLink links
+    """Versioned metadata schema for MuLink links
 
     Supports dict-style access to links by name: `schema.keys()`, `schema[key]` and `key in schema`.
     """

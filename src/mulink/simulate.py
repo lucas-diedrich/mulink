@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 from numpy.random import Generator
 
+from mulink.basic import MuLink
+
 
 def _generate_dag(
     n_level: int = 3,
@@ -165,6 +167,9 @@ def hierarchical_mudata(
 
     # Ensure that the adjacency matrix is stored in topological order, so that nodes belonging to highest priority mod
     # are coming up first, etc.
-    mdata.varp[varp_key] = nx.adjacency_matrix(dag, nodelist=list(nx.topological_sort(dag)))
+    adjacency_matrix = nx.adjacency_matrix(dag, nodelist=list(nx.topological_sort(dag)))
 
-    return mdata
+    mlink = MuLink(mdata=mdata)
+    mlink.add_link(link=adjacency_matrix, key=varp_key, semantics="aggregates_to")
+
+    return mlink._obj

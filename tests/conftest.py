@@ -3,9 +3,9 @@ import mudata as md
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 
-import mulink  # noqa: F401 — registers the namespace
+import mulink
 
 # Mudata changed the settings override context manager from a module to a method in version 0.4
 # see: https://mudata.readthedocs.io/latest/changelog.html
@@ -26,7 +26,7 @@ def simple_mudata() -> md.MuData:
 
     mdata = md.MuData({"rna": rna, "prot": prot})
     # var_names: [gene_A, gene_B, prot_C, prot_D]
-    adj = csr_matrix(
+    adj = csr_array(
         np.array(
             [
                 [0, 0, 1, 0],
@@ -36,8 +36,11 @@ def simple_mudata() -> md.MuData:
             ]
         )
     )
-    mdata.varp["feature_mapping"] = adj
-    return mdata
+
+    mlink = mulink.basic.MuLink(mdata)
+    mlink.add_link(adj, key="feature_mapping")
+
+    return mlink._obj
 
 
 @pytest.fixture
@@ -55,7 +58,7 @@ def n_to_m_mudata() -> md.MuData:
 
     mdata = md.MuData({"gene": gene, "prot": prot})
     # var_names: [gene_A, gene_B, prot_C, prot_D]
-    adj = csr_matrix(
+    adj = csr_array(
         np.array(
             [
                 [0, 0, 1, 1],
@@ -65,8 +68,11 @@ def n_to_m_mudata() -> md.MuData:
             ]
         )
     )
-    mdata.varp["feature_mapping"] = adj
-    return mdata
+
+    mlink = mulink.basic.MuLink(mdata)
+    mlink.add_link(adj, key="feature_mapping")
+
+    return mlink._obj
 
 
 @pytest.fixture(params=[{"linkage_dtype": np.int32}, {"linkage_dtype": np.float64}])
@@ -92,7 +98,9 @@ def simple_hierarchical_mudata(request) -> md.MuData:
 
     mdata = md.MuData({"level0": level0, "level1": level1, "level2": level2})
     # var_names: [A, B, C, D, E, F]
-    mdata.varp["feature_mapping"] = csr_matrix(
-        np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]], dtype=request.param["linkage_dtype"])
-    )
-    return mdata
+    adj = csr_array(np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]], dtype=request.param["linkage_dtype"]))
+
+    mlink = mulink.basic.MuLink(mdata)
+    mlink.add_link(adj, key="feature_mapping")
+
+    return mlink._obj

@@ -26,6 +26,7 @@ dependencies = [
   "matplotlib",
   "mudata",
   "networkx",
+  "pydantic",
   # for debug logging (referenced from the issue template)
   "session-info2",
 ]

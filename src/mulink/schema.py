@@ -1,7 +1,7 @@
 from collections.abc import KeysView
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     import mudata as md
@@ -15,17 +15,6 @@ REVISION when you make a schema change which may prevent interaction with some h
 ADDITION when you make a schema change that is compatible with all historical data
 """
 
-_MULINK_SUPPORTED_AXES = ("var",)
-"""Supported axes in mulink"""
-
-
-def mudata_axis(axis: str) -> str:
-    """Axis in MuData object"""
-    if axis not in _MULINK_SUPPORTED_AXES:
-        raise ValueError(f"`axis` must be {_MULINK_SUPPORTED_AXES}, not '{axis}'")
-
-    return axis
-
 
 # TODO: Versioning
 class LinkSchema(BaseModel):
@@ -34,9 +23,6 @@ class LinkSchema(BaseModel):
     The link's name is not part of the model, it is the key of the link in :attr:`MuLinkSchema.links`.
     """
 
-    axis: Annotated[Literal["var"], AfterValidator(mudata_axis)] = Field(
-        ..., description="Axis of MuData object to which the link applies. One of `obs` or `var`."
-    )
     semantics: str | None = Field(None, description="Semantic meaning of link.")
 
 
@@ -72,17 +58,18 @@ class MuLinkSchema(BaseModel):
         return key in self.links
 
     def validate_pkeys_exist(self, mdata: "md.MuData") -> None:
-        """Validate that every link exists in the pairwise attribute of its axis
+        """Validate that every link exists in `mdata.varp`
 
         Raises
         ------
         KeyError
-            If a link name is missing in the pairwise attribute.
+            If a link name is missing in `mdata.varp`.
         """
-        for key, link in self.links.items():
-            pairwise_attribute = f"{link.axis}p"
-            if key not in getattr(mdata, pairwise_attribute):
-                raise KeyError(f"Link `{key}` does not exist in `mdata.{pairwise_attribute}`")
+        # Links always live on the non-shared axis of the MuData object, so the axis is not stored per link.
+        # Only `axis=0` (links in `.varp`) is supported until mudata introduces a mode where both axes are non-shared.
+        for key in self.links:
+            if key not in mdata.varp:
+                raise KeyError(f"Link `{key}` does not exist in `mdata.varp`")
 
     def add_link(self, key: str, link: LinkSchema) -> None:
         """Add a link to the model

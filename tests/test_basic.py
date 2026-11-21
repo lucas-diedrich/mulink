@@ -78,6 +78,6 @@ class TestMeta:
 
     def test_meta_schema_matches_expectations(self, simple_mudata) -> None:
         result = simple_mudata.link.meta().model_dump(mode="json")
-        expected = mulink.schema.LinkSchema(axis="var", semantics=None).model_dump(mode="json")
+        expected = mulink.schema.LinkSchema(semantics=None).model_dump(mode="json")
 
         assert result == expected

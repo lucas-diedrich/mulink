@@ -34,8 +34,7 @@ class MuLink:
             Annotation of link.
             Passed to :class:`mulink.schema.LinkSchema` and added to `mdata.uns["mulink"]`
         """
-        # TODO: currently only `var` axis supported
-        annotation = LinkSchema(axis="var", **link_properties)
+        annotation = LinkSchema(**link_properties)
 
         if self._obj.uns.get(MuLinkSchema._MULINK_KEY) is None:
             schema = MuLinkSchema(links={key: annotation})

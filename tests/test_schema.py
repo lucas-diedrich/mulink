@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 from scipy.sparse import csr_matrix
 
-from mulink.schema import LinkSchema, MuLinkSchema, mudata_axis
+from mulink.schema import LinkSchema, MuLinkSchema
 
 
 @pytest.fixture
@@ -40,43 +40,26 @@ def mdata_with_varp(mdata: md.MuData, adjacency_matrix: csr_matrix) -> md.MuData
     return _mdata
 
 
-@pytest.mark.parametrize("axis", ["invalid"])
-def test_mudata_axis_fails(axis: str) -> None:
-    """Test axis validation"""
-    with pytest.raises(ValueError, match="`axis` must be"):
-        mudata_axis(axis)
-
-
 class TestLinkSchema:
     """Test LinkSchema"""
 
     @pytest.mark.parametrize(
         "_input",
         [
-            {"axis": "var", "semantics": "aggregates_to"},
-            {"axis": "var", "semantics": None},
+            {"semantics": "aggregates_to"},
+            {"semantics": None},
+            {},
         ],
-        ids=("complete", "missing_semantics"),
+        ids=("complete", "none_semantics", "missing_semantics"),
     )
     def test_linkschema_validate__succeeds(self, _input) -> None:
         LinkSchema.model_validate(_input)
-
-    @pytest.mark.parametrize(
-        "axis",
-        ["unsupported_axis", 1],
-        ids=("unsupported", "integer_value"),
-    )
-    def test_link_schema_validate__fails_incorrect_axis(self, axis) -> None:
-        """Check that the LinkSchema fails if an incorrect axis is specified"""
-
-        with pytest.raises(ValidationError):
-            LinkSchema.model_validate({"axis": axis, "semantics": None})
 
 
 class TestMuLinkSchema:
     """Test MuLinkSchema"""
 
-    @pytest.fixture(params=[{"axis": "var"}])
+    @pytest.fixture(params=[{"semantics": "maps_to"}])
     def correct_link_schema(self, request):
         """Correct schema"""
         return request.param
@@ -96,22 +79,22 @@ class TestMuLinkSchema:
     def test_mulinkschema_dict_access(self, schema) -> None:
         assert set(schema.keys()) == {"feature_mapping"}
         assert "feature_mapping" in schema
-        assert schema["feature_mapping"] == LinkSchema(axis="var")
+        assert schema["feature_mapping"] == LinkSchema(semantics="maps_to")
 
     def test_mulinkschema_add_link__succeeds(self, schema) -> None:
-        schema.add_link(key="new_link", link=LinkSchema(axis="var", semantics="maps_to"))
+        schema.add_link(key="new_link", link=LinkSchema(semantics="maps_to"))
 
         assert schema["new_link"].semantics == "maps_to"
 
     def test_mulinkschema_add_link__fails_redundant_key(self, schema) -> None:
         with pytest.raises(ValueError, match="already taken"):
-            schema.add_link(key="feature_mapping", link=LinkSchema(axis="var"))
+            schema.add_link(key="feature_mapping", link=LinkSchema())
 
     def test_validate_pkeys_exist__succeeds(self, schema, mdata_with_varp) -> None:
         schema.validate_pkeys_exist(mdata_with_varp)
 
     def test_validate_pkeys_exist__fails_missing_pkey(self, mdata_with_varp) -> None:
-        schema = MuLinkSchema(links={"missing_key": LinkSchema(axis="var")})
+        schema = MuLinkSchema(links={"missing_key": LinkSchema()})
 
         with pytest.raises(KeyError, match="missing_key"):
             schema.validate_pkeys_exist(mdata_with_varp)
@@ -154,8 +137,8 @@ class TestMuLinkSchema:
         [
             "incorrect_schema",
             {"key": "incorrect_schema"},
-            {"version": "1.0.0", "links": {"feature_mapping": {"axis": "var"}}},
-            {"version": "1-0-0", "links": [{"key": "feature_mapping", "axis": "var"}]},
+            {"version": "1.0.0", "links": {"feature_mapping": {}}},
+            {"version": "1-0-0", "links": [{"key": "feature_mapping"}]},
         ],
         ids=("string", "incorrect-dict", "wrong-version-schema", "list-of-links"),
     )

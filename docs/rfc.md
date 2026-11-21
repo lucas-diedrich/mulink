@@ -340,7 +340,6 @@ Globally:
 
 Per link:
 - MUST: Name of link-layer in pairwise-layer slot. Link names MUST be unique across the dataset.
-- MUST: Axis of links (`.obs`/`.var`). For MuData objects with `axis=0` or `axis=1`, the axis of the links is implied by the axis of the MuData object. For MuData objects with `axis=-1`, both axes are shared, so links can be stored in either `.obsp` or `.varp`, and the axis must be stated per link.
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
 
 In the future:
@@ -356,6 +355,8 @@ spans all features of all modalities, so the graph formally includes every modal
 between them.
 In the planned constraints field (see [Future constraints](#future-constraints)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This expresses the writer's intent about which modalities edges are expected between; readers MAY validate the graph against it, but it is not required to interpret the link.
 
+*Axis of links.* Links between modalities are only meaningful on the non-shared axis of the MuData object: `.var` for `axis=0`, `.obs` for `axis=1`, and none for `axis=-1`, where both axes are shared (see [@ilia-kats' comment](https://github.com/lucas-diedrich/mulink/pull/42#discussion_r4654329103)). The axis of a link is therefore implied by the MuData object and is not stored. If mudata introduces a mode in which both axes are non-shared (e.g. `axis=-2`, see [scverse/mudata#111](https://github.com/scverse/mudata/issues/111#issuecomment-4337758099)), a per-link axis field will be added as a backwards-compatible schema addition.
+
 
 ##### Versioning
 The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention.
@@ -367,7 +368,7 @@ Link names are unique in the dataset. The name is equivalent to the slot name in
 
 **Considered alternatives**
 
-- *Storing links as a list of records* (`[{"key": ..., "axis": ...}, ...]`). This was the original proposal, but mudata/anndata cannot serialize a list of dictionaries in `uns` to `.h5mu`/`.zarr`.
+- *Storing links as a list of records* (`[{"key": ..., "semantics": ...}, ...]`). This was the original proposal, but mudata/anndata cannot serialize a list of dictionaries in `uns` to `.h5mu`/`.zarr`.
 - *Separate dictionaries per axis* (`{"var": {...}, "obs": {...}}`). This would make names unique only within an axis. However, every lookup would then need both the name and the axis, and identical names on both axes are rarely useful and potentially confusing.
 
 ##### Examples
@@ -378,15 +379,12 @@ mdata.uns
         "version": "1-0-0",
         "links": {
             "feature_mapping_1": {
-                "axis": "var",
                 "semantics": "aggregates_to"
             },
             "feature_mapping_2": {
-                "axis": "var",
                 "semantics": None
             },
             "feature_mapping_3": {
-                "axis": "var",
                 "semantics": "maps_to"
             },
         }

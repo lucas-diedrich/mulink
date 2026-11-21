@@ -1,5 +1,7 @@
 """Main entrypoint for mulink"""
 
+from collections.abc import KeysView
+
 import mudata as md
 import pandas as pd
 from mudata import register_mudata_namespace
@@ -51,31 +53,42 @@ class MuLink:
         self._obj.varp[key] = csr_array(link)
         schema.to_mudata(mdata=self._obj)
 
-    def link(self, key: str = "feature_mapping") -> pd.DataFrame:
+    @property
+    def link_keys(self) -> KeysView:
+        """Names of available keys in object"""
+        return MuLinkSchema.from_mudata(self._obj).keys()
+
+    def link(self, key: str | None = None) -> pd.DataFrame:
         """Returns the feature mapping matrix of the current object
 
         Parameters
         ----------
         key
-            Key of feature mapping matrix in `.varp` to use.
+            Key of feature mapping matrix in `.varp` to use. If `None`, uses first defined key.
         """
+        if key is None:
+            key = list(self.link_keys)[0]
+
         matrix = self._obj.varp[key]
         return pd.DataFrame.sparse.from_spmatrix(matrix, index=self._obj.var_names, columns=self._obj.var_names).astype(
             pd.SparseDtype(matrix.dtype, fill_value=0)
         )
 
-    def meta(self, key: str = "feature_mapping") -> LinkSchema:
+    def meta(self, key: str | None = None) -> LinkSchema:
         """Returns the link metadata from the current object
 
         Parameters
         ----------
         key
-            Name of the link.
+            Name of the link. If `None`, uses first defined key.
 
         Returns
         -------
         The LinkSchema of the link `key`
         """
+        if key is None:
+            key = list(self.link_keys)[0]
+
         schema = MuLinkSchema.from_mudata(self._obj)
         return schema[key]
 

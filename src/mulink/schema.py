@@ -1,7 +1,7 @@
 from collections.abc import KeysView
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 if TYPE_CHECKING:
     import mudata as md
@@ -15,15 +15,37 @@ REVISION when you make a schema change which may prevent interaction with some h
 ADDITION when you make a schema change that is compatible with all historical data
 """
 
+MULINK_SCHEMA_VERSION: str = "1-0-0"
+"""Schema version written by this version of mulink"""
 
-# TODO: Versioning
+_SUPPORTED_SCHEMA_VERSIONS: frozenset[str] = frozenset({MULINK_SCHEMA_VERSION})
+"""Schema versions this version of mulink can read"""
+
+
+def supported_schema_version(version: str) -> str:
+    """Validate that a schema version can be read by this version of mulink
+
+    Raises
+    ------
+    ValueError
+        If the version is not supported.
+    """
+    # Strict, like spatialdata's format registry: data written with an unknown (e.g. newer) schema version is
+    # rejected instead of being interpreted with the current model.
+    if version not in _SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(
+            f"Unsupported mulink schema version '{version}'. Supported versions: {sorted(_SUPPORTED_SCHEMA_VERSIONS)}. "
+            "Data written with a newer schema version requires a newer version of mulink."
+        )
+    return version
+
+
 class LinkSchema(BaseModel):
     """Metadata of a single link"""
 
     semantics: str | None = Field(None, description="Semantic meaning of link.")
 
 
-# TODO: Versioning
 class MuLinkSchema(BaseModel):
     """Versioned metadata schema for MuLink links
 
@@ -34,8 +56,8 @@ class MuLinkSchema(BaseModel):
 
     _MULINK_KEY: ClassVar = "mulink"
 
-    version: str = Field(
-        "1-0-0",
+    version: Annotated[str, AfterValidator(supported_schema_version)] = Field(
+        MULINK_SCHEMA_VERSION,
         description="Version of schema",
         pattern=_MULINK_VERSION_REGEX,
     )

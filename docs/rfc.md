@@ -359,7 +359,10 @@ In the planned constraints field (see [Future constraints](#future-constraints))
 
 
 ##### Versioning
-The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention.
+The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention. Every change of the schema results in a new version and unknown versions are rejected.
+| Version | Changes |
+|---|---|
+| `1-0-0` | Initial schema: per-link `semantics`. |
 
 ##### Links
 Links are stored as named entries in the `links` dictionary (see [@ilan-gold's comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184)).

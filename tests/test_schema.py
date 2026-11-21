@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 from scipy.sparse import csr_matrix
 
-from mulink.schema import LinkSchema, MuLinkSchema
+from mulink.schema import MULINK_SCHEMA_VERSION, LinkSchema, MuLinkSchema
 
 
 @pytest.fixture
@@ -74,7 +74,7 @@ class TestMuLinkSchema:
 
     @pytest.fixture
     def schema(self, links) -> MuLinkSchema:
-        return MuLinkSchema(version="1-0-0", links=links)
+        return MuLinkSchema(version=MULINK_SCHEMA_VERSION, links=links)
 
     def test_mulinkschema_dict_access(self, schema) -> None:
         assert set(schema.keys()) == {"feature_mapping"}
@@ -110,16 +110,29 @@ class TestMuLinkSchema:
         with pytest.raises(ValidationError):
             MuLinkSchema.model_validate({"version": version, "links": links})
 
+    @pytest.mark.parametrize(
+        "version",
+        ["2-0-0", "1-1-0", "1-0-1", "0-0-1"],
+        ids=("newer-model", "newer-revision", "newer-addition", "older"),
+    )
+    def test_mulinkschema_from_mudata__fails_unsupported_version(self, version: str, mdata_with_varp, links) -> None:
+        """Reject well-formed but unknown schema versions instead of interpreting them with the current model"""
+        mdata = mdata_with_varp.copy()
+        mdata.uns[MuLinkSchema._MULINK_KEY] = {"version": version, "links": links}
+
+        with pytest.raises(ValidationError, match="Unsupported mulink schema version"):
+            MuLinkSchema.from_mudata(mdata)
+
     def test_mulinkschema_validate__fails_single_link(self, link: LinkSchema) -> None:
         """Raise ValidationError when only a single link is passed"""
 
         with pytest.raises(ValidationError):
-            MuLinkSchema.model_validate({"version": "1-0-0", "links": link})
+            MuLinkSchema.model_validate({"version": MULINK_SCHEMA_VERSION, "links": link})
 
     def test_mulinkschema_from_mudata__succeeds(self, mdata_with_varp, links) -> None:
         mdata = mdata_with_varp.copy()
 
-        schema = MuLinkSchema(version="1-0-0", links=links)
+        schema = MuLinkSchema(version=MULINK_SCHEMA_VERSION, links=links)
         mdata.uns["mulink"] = schema.model_dump(mode="json")
 
         inferred_schema = MuLinkSchema.from_mudata(mdata)
@@ -138,7 +151,7 @@ class TestMuLinkSchema:
             "incorrect_schema",
             {"key": "incorrect_schema"},
             {"version": "1.0.0", "links": {"feature_mapping": {}}},
-            {"version": "1-0-0", "links": [{"key": "feature_mapping"}]},
+            {"version": MULINK_SCHEMA_VERSION, "links": [{"key": "feature_mapping"}]},
         ],
         ids=("string", "incorrect-dict", "wrong-version-schema", "list-of-links"),
     )
@@ -154,7 +167,7 @@ class TestMuLinkSchema:
     def test_mulinkschema_to_mudata(self, mdata_with_varp, links) -> None:
         """Round trip test"""
         mdata = mdata_with_varp.copy()
-        schema = MuLinkSchema(version="1-0-0", links=links)
+        schema = MuLinkSchema(version=MULINK_SCHEMA_VERSION, links=links)
 
         schema.to_mudata(mdata)
 
@@ -165,7 +178,7 @@ class TestMuLinkSchema:
     def test_mulinkschema_io(self, tmp_path, mdata_with_varp, links) -> None:
         """Test IO"""
         mdata = mdata_with_varp.copy()
-        schema = MuLinkSchema(version="1-0-0", links=links)
+        schema = MuLinkSchema(version=MULINK_SCHEMA_VERSION, links=links)
         write_path = tmp_path / "test.h5mu"
 
         schema.to_mudata(mdata)

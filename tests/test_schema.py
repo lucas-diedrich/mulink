@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 from scipy.sparse import csr_matrix
 
-from mulink.schema import LinkSchema, MuLinkSchema
+from mulink.schema import LinkSchema, MuLinkSchema, mudata_axis
 
 
 @pytest.fixture
@@ -38,6 +38,13 @@ def mdata_with_varp(mdata: md.MuData, adjacency_matrix: csr_matrix) -> md.MuData
     _mdata.varp["feature_mapping"] = adjacency_matrix
 
     return _mdata
+
+
+@pytest.mark.parametrize("axis", ["invalid"])
+def test_mudata_axis_fails(axis: str) -> None:
+    """Test axis validation"""
+    with pytest.raises(ValueError, match="`axis` must be"):
+        mudata_axis(axis)
 
 
 class TestLinkSchema:

@@ -1,5 +1,7 @@
 """Main entrypoint for mulink"""
 
+from collections.abc import KeysView
+
 import mudata as md
 import pandas as pd
 from mudata import register_mudata_namespace
@@ -51,33 +53,60 @@ class MuLink:
         self._obj.varp[key] = csr_array(link)
         schema.to_mudata(mdata=self._obj)
 
-    def link(self, key: str = "feature_mapping") -> pd.DataFrame:
+    def link(self, key: str | None = None) -> pd.DataFrame:
         """Returns the feature mapping matrix of the current object
 
         Parameters
         ----------
         key
-            Key of feature mapping matrix in `.varp` to use.
+            Name of the link. Required if more than one link exists.
+
+        Raises
+        ------
+        ValueError
+            If `key` is `None` and the object does not contain exactly one link.
         """
+        key = self._resolve_key(key)
         matrix = self._obj.varp[key]
         return pd.DataFrame.sparse.from_spmatrix(matrix, index=self._obj.var_names, columns=self._obj.var_names).astype(
             pd.SparseDtype(matrix.dtype, fill_value=0)
         )
 
-    def meta(self, key: str = "feature_mapping") -> LinkSchema:
+    def meta(self, key: str | None = None) -> LinkSchema:
         """Returns the link metadata from the current object
 
         Parameters
         ----------
         key
-            Name of the link.
+            Name of the link. Required if more than one link exists.
 
         Returns
         -------
         The LinkSchema of the link `key`
+
+        Raises
+        ------
+        ValueError
+            If `key` is `None` and the object does not contain exactly one link.
         """
+        key = self._resolve_key(key)
         schema = MuLinkSchema.from_mudata(self._obj)
         return schema[key]
+
+    @property
+    def link_keys(self) -> KeysView[str]:
+        """Names of available keys in object"""
+        return MuLinkSchema.from_mudata(self._obj).keys()
+
+    def _resolve_key(self, key: str | None) -> str:
+        if key is not None:
+            return key
+        keys = list(self.link_keys)
+        # Dict order in `uns` is not preserved across h5mu/zarr I/O (scverse/anndata#610),
+        # so picking "the first" key would be non-deterministic.
+        if len(keys) != 1:
+            raise ValueError(f"`key` must be given explicitly when the object has {len(keys)} links. Available: {keys}")
+        return keys[0]
 
     @property
     def query(self):

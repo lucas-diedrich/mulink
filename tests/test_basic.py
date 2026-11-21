@@ -70,16 +70,32 @@ class TestLink:
         assert_array_equal(result.index, simple_mudata.var_names)
         assert_array_equal(result.columns, simple_mudata.var_names)
 
-    def test_values_match_adjacency(self, simple_mudata) -> None:
-        result = simple_mudata.link.link()
+    @pytest.mark.parametrize("key", [None, "feature_mapping"])
+    def test_values_match_adjacency(self, simple_mudata, key: str | None) -> None:
+        result = simple_mudata.link.link(key=key)
         expected = simple_mudata.varp["feature_mapping"].toarray()
 
         np.testing.assert_array_equal(result.values, expected)
 
+    def test_none_raises_for_multiple_keys(self, simple_mudata) -> None:
+        """Test that in ambiguous key retrieval (order of keys is not guaranteed), link() raises"""
+        mdata = simple_mudata.copy()
+        mdata.link.add_link(csr_array(np.zeros(shape=(mdata.n_var, mdata.n_var))), key="custom")
+
+        with pytest.raises(ValueError, match="must be given explicitly"):
+            mdata.link.link()
+
+    def test_no_mulink_key_raises(self):
+        mdata = md.MuData()
+
+        with pytest.raises(KeyError, match="Expected link metadata"):
+            mdata.link.link()
+
 
 class TestMeta:
-    def test_returns_linkschema(self, simple_mudata) -> None:
-        result = simple_mudata.link.meta()
+    @pytest.mark.parametrize("key", [None, "feature_mapping"])
+    def test_returns_linkschema(self, simple_mudata, key: str | None) -> None:
+        result = simple_mudata.link.meta(key=key)
 
         assert isinstance(result, mulink.schema.LinkSchema)
 
@@ -88,3 +104,19 @@ class TestMeta:
         expected = mulink.schema.LinkSchema(semantics=None).model_dump(mode="json")
 
         assert result == expected
+
+    def test_none_raises_for_multiple_keys(self, simple_mudata) -> None:
+        """Test that in ambiguous key retrieval (order of keys is not guaranteed), meta() raises"""
+        mdata = simple_mudata.copy()
+        mdata.link.add_link(
+            csr_array(np.zeros(shape=(mdata.n_var, mdata.n_var))), key="custom", semantics="no_connections"
+        )
+
+        with pytest.raises(ValueError, match="must be given explicitly"):
+            mdata.link.meta()
+
+    def test_no_mulink_key_raises(self):
+        mdata = md.MuData()
+
+        with pytest.raises(KeyError, match="Expected link metadata"):
+            mdata.link.meta()

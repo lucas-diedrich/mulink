@@ -191,7 +191,7 @@ We store the adjacency matrix of the graph that encodes the feature mapping as c
 
 **Considered alternatives**
 
-- Storing the feature mapping in the `mdata.uns` attribute might also be feasible but would loose the advantage of the synchronization of the `varp` attribute with the `var` axis.
+- Storing the feature mapping in the `mdata.uns` attribute might also be feasible but would lose the advantage of the synchronization of the `varp` attribute with the `var` axis.
 
 #### Multiple link types
 
@@ -301,7 +301,7 @@ Potential intended graph properties that a writer can declare and a reader can v
 - hierarchy: Features from one modality might only be allowed to map to features from a subset of other modalities
 
 As the package should support various use cases, the validation of these constraints will likely have to be context-dependent and configurable.
-The constraints would also have to be serializable, e.g. in the `mdata.uns` attribute or the `mdata.varp['feature_mapping'].attrs` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
+The constraints would also have to be serializable in the `mdata.uns` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
 
 
 

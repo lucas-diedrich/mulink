@@ -64,10 +64,16 @@ class MuLink:
         Parameters
         ----------
         key
-            Key of feature mapping matrix in `.varp` to use. If `None`, uses first defined key.
+            Key of feature mapping matrix in `.varp` to use.
         """
         if key is None:
-            key = list(self.link_keys)[0]
+            keys = list(self.link_keys)
+
+            # For multiple keys, the order is not preserved in I/O wround trips
+            # Make intent explicit for ambiguous scenarios
+            if len(keys) > 1:
+                raise ValueError("More than 1 available key, please explicitly set the ``key`` argument")
+            key = keys[0]
 
         matrix = self._obj.varp[key]
         return pd.DataFrame.sparse.from_spmatrix(matrix, index=self._obj.var_names, columns=self._obj.var_names).astype(
@@ -87,7 +93,12 @@ class MuLink:
         The LinkSchema of the link `key`
         """
         if key is None:
-            key = list(self.link_keys)[0]
+            keys = list(self.link_keys)
+            # For multiple keys, the order is not preserved in I/O wround trips
+            # Make intent explicit for ambiguous scenarios
+            if len(keys) > 1:
+                raise ValueError("More than 1 available key, please explicitly set the ``key`` argument")
+            key = keys[0]
 
         schema = MuLinkSchema.from_mudata(self._obj)
         return schema[key]

@@ -77,15 +77,13 @@ class TestLink:
 
         np.testing.assert_array_equal(result.values, expected)
 
-    def test_none_matches_first_key(self, simple_mudata) -> None:
+    def test_none_raises_for_multiple_keys(self, simple_mudata) -> None:
+        """Test that in ambiguous key retrieval (order of keys is not guaranteed), link() raises"""
         mdata = simple_mudata.copy()
         mdata.link.add_link(csr_array(np.zeros(shape=(mdata.n_var, mdata.n_var))), key="custom")
-        assert not np.array_equal(mdata.varp["feature_mapping"].toarray(), mdata.varp["custom"])
 
-        result = mdata.link.link(key=None)
-        expected = mdata.varp["feature_mapping"].toarray()
-
-        np.testing.assert_array_equal(result.values, expected)
+        with pytest.raises(ValueError, match="More than 1 available key"):
+            mdata.link.link()
 
     def test_no_mulink_key_raises(self):
         mdata = md.MuData()
@@ -107,19 +105,15 @@ class TestMeta:
 
         assert result == expected
 
-    def test_none_matches_first_key(self, simple_mudata) -> None:
+    def test_none_raises_for_multiple_keys(self, simple_mudata) -> None:
+        """Test that in ambiguous key retrieval (order of keys is not guaranteed), link() raises"""
         mdata = simple_mudata.copy()
         mdata.link.add_link(
             csr_array(np.zeros(shape=(mdata.n_var, mdata.n_var))), key="custom", semantics="no_connections"
         )
-        assert "feature_mapping" in simple_mudata.link.link_keys
 
-        expected = mdata.link.meta(key="feature_mapping").model_dump_json()
-        assert expected != mdata.link.meta(key="custom").model_dump_json()
-
-        result = mdata.link.meta().model_dump_json()
-
-        assert result == expected
+        with pytest.raises(ValueError, match="More than 1 available key"):
+            mdata.link.meta()
 
     def test_no_mulink_key_raises(self):
         mdata = md.MuData()

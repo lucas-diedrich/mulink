@@ -3,7 +3,7 @@
 import mudata as md
 import pandas as pd
 from mudata import register_mudata_namespace
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 
 from mulink.schema import LinkSchema, MuLinkSchema
 
@@ -21,7 +21,7 @@ class MuLink:
     def __init__(self, mdata: md.MuData) -> None:
         self._obj = mdata
 
-    def add_link(self, link: csr_matrix, *, key: str = "feature_mapping", **link_properties) -> None:
+    def add_link(self, link: csr_array, *, key: str = "feature_mapping", **link_properties) -> None:
         """Add a feature link to mudata
 
         Parameters
@@ -43,7 +43,7 @@ class MuLink:
             schema = MuLinkSchema.from_mudata(self._obj)
             schema.add_link(key=key, link=annotation)
 
-        self._obj.varp[key] = csr_matrix(link)
+        self._obj.varp[key] = csr_array(link)
         schema.to_mudata(mdata=self._obj)
 
     def link(self, key: str = "feature_mapping") -> pd.DataFrame:

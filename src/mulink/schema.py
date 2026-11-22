@@ -53,6 +53,9 @@ class GraphConstraints(BaseModel):
     max_incoming_edges: NonNegativeInt | None = Field(
         None, description="Maximum number of edges pointing to any single feature."
     )
+    allow_isolated_features: bool = Field(
+        True, description="Whether features without any incoming or outgoing edge are allowed."
+    )
     allowed_targets: dict[str, list[str]] | None = Field(
         None,
         description=(

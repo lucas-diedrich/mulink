@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Annotated, ClassVar
 
 from pydantic import AfterValidator, BaseModel, Field, NonNegativeInt
 
+from mulink._axis import link_axis
+
 if TYPE_CHECKING:
     import mudata as md
 
@@ -105,18 +107,22 @@ class MuLinkSchema(BaseModel):
         return key in self.links
 
     def validate_pkeys_exist(self, mdata: "md.MuData") -> None:
-        """Validate that every link exists in `mdata.varp`
+        """Validate that every link exists in the pairwise attribute of the linked axis (`mdata.varp`/`mdata.obsp`)
 
         Raises
         ------
         KeyError
-            If a link name is missing in `mdata.varp`.
+            If a link name is missing in the pairwise attribute.
+        NotImplementedError
+            If the shared axis of the MuData object does not support links.
         """
-        # Links always live on the non-shared axis of the MuData object, so the axis is not stored per link.
-        # Only `axis=0` (links in `.varp`) is supported until mudata introduces a mode where both axes are non-shared.
+        # Links always live on the non-shared axis of the MuData object, so the axis is not stored per link
+        # but derived from `mdata.axis`.
+        axis = link_axis(mdata)
+        pairwise = axis.get_pairwise(mdata)
         for key in self.links:
-            if key not in mdata.varp:
-                raise KeyError(f"Link `{key}` does not exist in `mdata.varp`")
+            if key not in pairwise:
+                raise KeyError(f"Link `{key}` does not exist in `mdata.{axis.pairwise}`")
 
     def add_link(self, key: str, link: LinkSchema) -> None:
         """Add a link to the model

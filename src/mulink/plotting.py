@@ -7,12 +7,15 @@ import mudata as md
 import networkx as nx
 import numpy as np
 
+from mulink._axis import link_axis
+
 DEFAULT_COLOR = "#59b9c0"
 DEFAULT_CMAP = mpl.colors.ListedColormap(["#ffffff", DEFAULT_COLOR])
 
 
 def _modality_limits(mdata: md.MuData) -> np.ndarray:
-    return np.array([np.argmax(mdata.varmap[key]) for key in mdata.mod.keys()])
+    modality_map = link_axis(mdata).get_modality_map(mdata)
+    return np.array([np.argmax(modality_map[key]) for key in mdata.mod.keys()])
 
 
 class PlotAccessor:
@@ -82,7 +85,7 @@ class PlotAccessor:
         if pos is None:
             pos = nx.layout.multipartite_layout(
                 dag,
-                subset_key={key: self._mdata.mod[key].var_names for key in self._mdata.mod.keys()},
+                subset_key={mod: self._link._axis.get_names(self._mdata.mod[mod]) for mod in self._mdata.mod.keys()},
                 align="vertical",
             )
         else:

@@ -52,10 +52,34 @@ class TestAddLink:
         assert "custom" in mdata.uns["mulink"]["links"]
 
     def test_add_link__wrong_axis_raises(self):
-        mdata = md.MuData(axis=1)  # shared variables
+        mdata = md.MuData(axis=-1)  # shared observations and variables
 
         with pytest.raises(NotImplementedError, match="Shared axis"):
             mdata.link.add_link(link=csr_array([[]]))
+
+    def test_add_link__obs_axis_stores_in_obsp(self) -> None:
+        sc = ad.AnnData(np.array([[1]]), obs=pd.DataFrame(index=["a"]))
+        spatial = ad.AnnData(np.array([[2]]), obs=pd.DataFrame(index=["b"]))
+        mdata = md.MuData({"sc": sc, "spatial": spatial}, axis=1)
+
+        adj = csr_array(np.array([[0, 1], [0, 0]]))
+        mdata.link.add_link(adj)  # type: ignore
+
+        assert "feature_mapping" in mdata.obsp
+        assert isinstance(mdata.obsp["feature_mapping"], csr_array)
+        assert "feature_mapping" not in mdata.varp
+        assert "feature_mapping" in mdata.uns["mulink"]["links"]
+
+    def test_add_link__obs_axis_validates_against_obsmap(self, simple_obs_mudata) -> None:
+        mdata = simple_obs_mudata.copy()
+        # cell_A -> cell_B links two observations of the same modality
+        adj = np.zeros(shape=(mdata.n_obs, mdata.n_obs))
+        adj[0, 1] = 1
+
+        with pytest.raises(mulink.validate.SelfReferenceError):
+            mdata.link.add_link(adj, key="invalid")
+
+        assert "invalid" not in mdata.obsp
 
 
 class TestLink:
@@ -69,6 +93,13 @@ class TestLink:
 
         assert_array_equal(result.index, simple_mudata.var_names)
         assert_array_equal(result.columns, simple_mudata.var_names)
+
+    def test_index_and_columns_match_obs_names(self, simple_obs_mudata) -> None:
+        result = simple_obs_mudata.link.link()
+
+        assert_array_equal(result.index, simple_obs_mudata.obs_names)
+        assert_array_equal(result.columns, simple_obs_mudata.obs_names)
+        np.testing.assert_array_equal(result.values, simple_obs_mudata.obsp["feature_mapping"].toarray())
 
     @pytest.mark.parametrize("key", [None, "feature_mapping"])
     def test_values_match_adjacency(self, simple_mudata, key: str | None) -> None:

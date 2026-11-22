@@ -77,7 +77,7 @@ def filter_modality_members(vertices: Iterable[int], varmap: Mapping, mods: Iter
     vertices
         Global integer position of vertix in mdata object
     varmap
-        mudata varmap
+        Modality map of the linked axis, i.e. `mdata.varmap` (`mdata.axis == 0`) or `mdata.obsmap` (`mdata.axis == 1`)
     modalities
         Modalities to consider
 
@@ -131,10 +131,12 @@ class QueryAccessor:
         include_self: bool = True,
         mods: str | list[str] | None = None,
     ) -> md.MuData:
-        adjacency_matrix = self._mdata.varp[key]
+        axis = self._link._axis
+        adjacency_matrix = self._link._get_link(key)
+        names = axis.get_names(self._mdata)
 
         features = [features] if isinstance(features, str) else features
-        query_indices = self._mdata.var_names.get_indexer(features)
+        query_indices = names.get_indexer(features)
 
         _raise_on_missing(indexer=query_indices, labels=features)
 
@@ -145,9 +147,11 @@ class QueryAccessor:
 
         if mods is not None:
             mods = [mods] if isinstance(mods, str) else mods
-            result_indices = filter_modality_members(vertices=result_indices, varmap=self._mdata.varmap, mods=mods)
+            result_indices = filter_modality_members(
+                vertices=result_indices, varmap=axis.get_modality_map(self._mdata), mods=mods
+            )
 
-        return self._mdata[:, self._mdata.var_names[result_indices]]
+        return self._mdata[axis.slicer(names[result_indices])]
 
     def descendants(
         self,
@@ -162,9 +166,9 @@ class QueryAccessor:
         Parameters
         ----------
         features
-            Features to query for
+            Features (`mdata.axis == 0`) or observations (`mdata.axis == 1`) to query for
         key
-            Key in `mdata.varm` that represents the mulink graph
+            Name of the link in `mdata.varp`/`mdata.obsp` that represents the mulink graph
         include_self
             Whether to include the query features in the results.
         include_mods
@@ -200,9 +204,9 @@ class QueryAccessor:
         Parameters
         ----------
         features
-            Features to query for
+            Features (`mdata.axis == 0`) or observations (`mdata.axis == 1`) to query for
         key
-            Key in `mdata.varm` that represents the mulink graph
+            Name of the link in `mdata.varp`/`mdata.obsp` that represents the mulink graph
         include_self
             Whether to include the query features in the results.
         include_mods

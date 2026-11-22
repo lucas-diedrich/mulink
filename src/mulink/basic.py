@@ -7,16 +7,18 @@ import pandas as pd
 from mudata import register_mudata_namespace
 from scipy.sparse import csr_array
 
+from mulink._axis import LinkAxis, link_axis
 from mulink.schema import LinkSchema, MuLinkSchema
 from mulink.validate import validate_link
-
-_MULINK_SUPPORTED_AXES = (0,)
-"""Supported axis of mudata objects"""
 
 
 @register_mudata_namespace("link")
 class MuLink:
     """Link between modalities in mudata
+
+    Links connect the elements of the non-shared axis of the MuData object:
+        - variables (`.varp`) if observations are shared (`mdata.axis==0`)
+        - observations (`.obsp`) if variables are shared (`mdata.axis == 1`)
 
     Functionalities are extended via accessors:
 
@@ -30,14 +32,14 @@ class MuLink:
     def add_link(
         self, link: csr_array, *, key: str = "feature_mapping", validate: bool = True, **link_properties
     ) -> None:
-        """Add a feature link to mudata
+        """Add a link to mudata
 
         Parameters
         ----------
         link
             Adjacency matrix defining the link graph
         key
-            Name of slot in `mudata.varp`.
+            Name of slot in `mudata.varp` (`mdata.axis == 0`) or `mudata.obsp` (`mdata.axis == 1`).
         validate
             Whether to validate the link graph before adding it, see :meth:`validate`.
         link_properties
@@ -46,17 +48,16 @@ class MuLink:
 
         Raises
         ------
+        NotImplementedError
+            If the shared axis of the MuData object does not support links.
         mulink.validate.LinkValidationError
             If `validate` is `True` and the link graph is invalid. The object is not modified.
         """
-        if self._obj.axis not in (_MULINK_SUPPORTED_AXES):
-            raise NotImplementedError(f"Shared axis {self._obj.axis} in mudata object is not supported.")
-
         annotation = LinkSchema(**link_properties)
         link = csr_array(link)
 
         if validate:
-            validate_link(link, self._obj.varmap, annotation.constraints)
+            validate_link(link, self._axis.get_modality_map(self._obj), annotation.constraints)
 
         if self._obj.uns.get(MuLinkSchema._MULINK_KEY) is None:
             schema = MuLinkSchema(links={key: annotation})
@@ -64,11 +65,11 @@ class MuLink:
             schema = MuLinkSchema.from_mudata(self._obj)
             schema.add_link(key=key, link=annotation)
 
-        self._obj.varp[key] = link
+        self._axis.get_pairwise(self._obj)[key] = link
         schema.to_mudata(mdata=self._obj)
 
     def link(self, key: str | None = None) -> pd.DataFrame:
-        """Returns the feature mapping matrix of the current object
+        """Returns the link matrix of the current object, indexed by the names of the linked axis
 
         Parameters
         ----------
@@ -81,8 +82,9 @@ class MuLink:
             If `key` is `None` and the object does not contain exactly one link.
         """
         key = self._resolve_key(key)
-        matrix = self._obj.varp[key]
-        return pd.DataFrame.sparse.from_spmatrix(matrix, index=self._obj.var_names, columns=self._obj.var_names).astype(
+        matrix = self._get_link(key)
+        names = self._axis.get_names(self._obj)
+        return pd.DataFrame.sparse.from_spmatrix(matrix, index=names, columns=names).astype(
             pd.SparseDtype(matrix.dtype, fill_value=0)
         )
 
@@ -111,6 +113,13 @@ class MuLink:
     def link_keys(self) -> KeysView[str]:
         """Names of available keys in object"""
         return MuLinkSchema.from_mudata(self._obj).keys()
+
+    @property
+    def _axis(self) -> LinkAxis:
+        return link_axis(self._obj)
+
+    def _get_link(self, key: str) -> csr_array:
+        return self._axis.get_pairwise(self._obj)[key]
 
     def _resolve_key(self, key: str | None) -> str:
         if key is not None:
@@ -162,5 +171,6 @@ class MuLink:
         schema = MuLinkSchema.from_mudata(self._obj)
         keys = schema.keys() if keys is None else [keys] if isinstance(keys, str) else keys
 
+        modality_map = self._axis.get_modality_map(self._obj)
         for key in keys:
-            validate_link(self._obj.varp[key], self._obj.varmap, schema[key].constraints)
+            validate_link(self._get_link(key), modality_map, schema[key].constraints)

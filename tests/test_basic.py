@@ -11,9 +11,9 @@ import mulink
 
 class TestAddLink:
     def test_add_link__stores_key(self) -> None:
-        rna = ad.AnnData(np.array([[1, 2]]))
-        rna.var_names = ["a", "b"]
-        mdata = md.MuData({"rna": rna})
+        rna = ad.AnnData(np.array([[1]]), var=pd.DataFrame(index=["a"]))
+        prot = ad.AnnData(np.array([[2]]), var=pd.DataFrame(index=["b"]))
+        mdata = md.MuData({"rna": rna, "prot": prot})
 
         adj = csr_array(np.array([[0, 1], [0, 0]]))
         mdata.link.add_link(adj)  # type: ignore
@@ -26,9 +26,9 @@ class TestAddLink:
         assert "feature_mapping" in mdata.uns["mulink"]["links"]
 
     def test_add_link__custom_key(self) -> None:
-        rna = ad.AnnData(np.array([[1, 2]]))
-        rna.var_names = ["a", "b"]
-        mdata = md.MuData({"rna": rna})
+        rna = ad.AnnData(np.array([[1]]), var=pd.DataFrame(index=["a"]))
+        prot = ad.AnnData(np.array([[2]]), var=pd.DataFrame(index=["b"]))
+        mdata = md.MuData({"rna": rna, "prot": prot})
 
         adj = csr_array(np.array([[0, 1], [0, 0]]))
         mdata.link.add_link(adj, key="custom")  # type: ignore

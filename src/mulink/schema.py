@@ -1,7 +1,7 @@
 from collections.abc import KeysView
 from typing import TYPE_CHECKING, Annotated, ClassVar
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field, NonNegativeInt
 
 if TYPE_CHECKING:
     import mudata as md
@@ -38,10 +38,40 @@ def supported_schema_version(version: str) -> str:
     return version
 
 
+class GraphConstraints(BaseModel):
+    """Optional constraints on the link graph
+
+    Acyclicity and the absence of edges within a modality are part of the link format and always enforced,
+    hence they are not configurable here.
+    """
+
+    model_config = {"extra": "forbid"}
+
+    max_outgoing_edges: NonNegativeInt | None = Field(
+        None, description="Maximum number of edges pointing away from any single feature."
+    )
+    max_incoming_edges: NonNegativeInt | None = Field(
+        None, description="Maximum number of edges pointing to any single feature."
+    )
+    allow_isolated_features: bool = Field(
+        True, description="Whether features without any incoming or outgoing edge are allowed."
+    )
+    allowed_targets: dict[str, list[str]] | None = Field(
+        None,
+        description=(
+            "Mapping from a source modality to the modalities its features may link to. "
+            "Modalities that are not listed as keys are unrestricted."
+        ),
+    )
+
+
 class LinkSchema(BaseModel):
     """Metadata of a single link"""
 
+    model_config = {"extra": "forbid"}
+
     semantics: str | None = Field(None, description="Semantic meaning of link.")
+    constraints: GraphConstraints = Field(default_factory=GraphConstraints, description="Constraints on link graph.")
 
 
 class MuLinkSchema(BaseModel):

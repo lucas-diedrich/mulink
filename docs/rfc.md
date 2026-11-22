@@ -75,6 +75,9 @@ flowchart LR
 A matrix representation of a graph (see also [`adjacency_matrix`](https://networkx.org/documentation/stable/reference/generated/networkx.linalg.graphmatrix.adjacency_matrix.html)). If the graph consists of $p$ vertices, the adjacency matrix has a shape of $p \times p$. A non-zero value at row $u$ and column $v$ indicates that node $u$ has an edge pointing to node $v$.
 
 > ![ Important ]
+> Explicitly stored zeros are not considered edges at the moment. Edge weights must be non-zero.
+
+> ![ Important ]
 > **Negative edge weights do not invert connections**. A negative edge weight at position (u, v) still indicates a connection directed from node u to node v.
 
 E.g. the corresponding adjacency matrix of this graph
@@ -285,23 +288,40 @@ From version `0.0.2` on, we support multihop traversals.
 
 ### Constraints and validation
 
-> ![ Note ]
-> Work in progress
+The adjacency matrix must have the shape $p \times p$, where $p$ is the number of features in the mudata object. In addition, links are validated against two kinds of graph properties: structural rules that are part of the format, and optional constraints that a writer declares per link.
 
-Currently, no validation or constraints are enforced for the adjacency matrix/graph, except for the shape (must be equivalent to the number of features in the mudata object $p \times p$)
+An edge is a non-zero entry of the adjacency matrix (see [Adjacency matrix](#adjacency-matrix)).
 
-### Future constraints
+#### Structural rules
 
-Potential intended graph properties that a writer can declare and a reader can validate:
+The following rules are always enforced and cannot be configured:
 
-- **minimal connectivity**: Every feature should contain at least one incoming or outgoing connection
-- **maximal connectivity**: Feature might only be allowed a maximum number of incoming/outgoing edges.
-- **acyclicity**: Graph should not contain cycles
-- **self-referential**: Features should not map to features from the same modality
-- hierarchy: Features from one modality might only be allowed to map to features from a subset of other modalities
+- **Acyclicity**: The graph must not contain cycles, including self-loops (see [Data representation](#data-representation)).
+- **No self-references**: Features must not link to features of the same modality.
 
-As the package should support various use cases, the validation of these constraints will likely have to be context-dependent and configurable.
-The constraints would also have to be serializable in the `mdata.uns` attribute ([Schema, Encoding and serialization](#schema-encoding-and-serialization)).
+#### Optional constraints
+
+A writer can declare the intended structure of a link in its `constraints` field (see [Stored information](#stored-information)). By default, no constraint is set, so any graph that satisfies the [structural rules](#structural-rules) is valid.
+
+| Constraint | Type | Default | Meaning |
+|---|---|---|---|
+| `max_outgoing_edges` | non-negative integer or `None` | `None` | Maximum number of edges pointing away from any single feature. |
+| `max_incoming_edges` | non-negative integer or `None` | `None` | Maximum number of edges pointing to any single feature. |
+| `allow_isolated_features` | boolean | `True` | Whether features without any incoming or outgoing edge are allowed. |
+| `allowed_targets` | mapping from modality to list of modalities, or `None` | `None` | Modalities that the features of a source modality may link to (hierarchy). Source modalities that are not listed are unrestricted. |
+
+For example, the constraint `{"allowed_targets": {"peptides": ["proteins"]}}` permits edges from peptides to proteins, but rejects an edge from a peptide to a gene. Constraints that refer to modalities that do not exist in the mudata object are rejected as invalid.
+
+#### When validation happens
+
+- `mdata.link.add_link` validates a link before it is added to the object. A link that fails validation leaves the object unchanged. Validation can be skipped with `validate=False`.
+- `mdata.link.validate` validates stored links against their stored constraints, e.g. after the adjacency matrix was modified or after reading a file.
+
+Each violated property raises a dedicated subclass of `mulink.validate.LinkValidationError` (`CycleError`, `SelfReferenceError`, `ConnectivityError`, `HierarchyError`).
+
+**Considered alternatives**
+
+- *Constraints as a list of names* (e.g. `["acyclic", "max_outgoing_edges"]`). This cannot express parametrized constraints, such as a maximum number of edges or the allowed target modalities. A typed model with one field per constraint is validated by pydantic and can be exported as a JSON schema, which allows non-Python readers (e.g. R) to validate the metadata ([#23](https://github.com/lucas-diedrich/mulink/issues/23)).
 
 
 
@@ -329,7 +349,7 @@ Users are expected to access the metadata through the mulink API (`mdata.link.ad
 **Considered alternatives**
 
 - *`.attrs` of the pairwise element.* We considered storing the schema in the `.attrs` attribute of the respective `mudata.MuData.{obs,var}p` element. This is, however, not directly accessible in memory, which means that the additional benefits from storing the metadata in `.uns` (autodiscovery, on-the-fly validation), would not be available.
-- *Dedicated namespace or attribute.* The metadata could be stored in a dedicated, read-only attribute (e.g. `mdata.links`) that holds both the adjacency matrices and their metadata (see [@ilia-kats' comment](https://github.com/lucas-diedrich/mulink/pull/42#discussion_r4311392940)). This would restrict the registration of links to the mulink API and allow for validation upon registration (#22), but would require custom serialization logic and readers. As long as mulink is a separate package, we prefer the open approach. This option should be reconsidered if links become part of the `mudata` format.
+- *Dedicated namespace or attribute.* The metadata could be stored in a dedicated, read-only attribute (e.g. `mdata.links`) that holds both the adjacency matrices and their metadata (see [@ilia-kats' comment](https://github.com/lucas-diedrich/mulink/pull/42#discussion_r4311392940)). This would restrict the registration of links to the mulink API and thereby guarantee validation upon registration (see [Constraints and validation](#constraints-and-validation)). In the current approach, `mdata.link.add_link` validates links, but matrices written to `mdata.varp` directly bypass validation until `mdata.link.validate` is called. A dedicated attribute would, however, require custom serialization logic and readers. As long as mulink is a separate package, we prefer the open approach. This option should be reconsidered if links become part of the `mudata` format.
 
 #### Stored information
 
@@ -341,9 +361,9 @@ Globally:
 Per link:
 - MUST: Name of link-layer in pairwise-layer slot. Link names MUST be unique across the dataset.
 - OPTIONAL: Semantics (meaning) of link, along the directionality of the edge (see [edge directionality convention](#adjacency-matrix)). An edge from node `u` to node `v` with semantics `s` implies: "`u` `s` `v`"
+- OPTIONAL: Intended constraints of the graph structure (see [Optional constraints](#optional-constraints)) that can be validated by readers.
 
-In the future:
-- OPTIONAL: Intended constraints of the graph structure (see [Future constraints](#future-constraints)) that can be validated by readers.
+All fields are written explicitly, including unset fields as `None`. Readers therefore do not have to rely on the defaults of their own schema version to interpret a stored link.
 
 
 **Excluded fields**
@@ -353,7 +373,7 @@ In the future:
 "mod2"}`). We deliberately do not include such a field. The adjacency matrix in `mdata.varp`/`mdata.obsp` always
 spans all features of all modalities, so the graph formally includes every modality and every pairwise mapping
 between them.
-In the planned constraints field (see [Future constraints](#future-constraints)), involved modalities will be included as *a statement of intent*, i.e. between which modalities edges are allowed. This expresses the writer's intent about which modalities edges are expected between; readers MAY validate the graph against it, but it is not required to interpret the link.
+In the constraints field (see [Optional constraints](#optional-constraints)), involved modalities can be included as *a statement of intent* (`allowed_targets`), i.e. between which modalities edges are allowed. This expresses the writer's intent about which modalities edges are expected between; readers MAY validate the graph against it, but it is not required to interpret the link.
 
 *Axis of links.* Links between modalities are only meaningful on the non-shared axis of the MuData object: `.var` for `axis=0`, `.obs` for `axis=1`, and none for `axis=-1`, where both axes are shared (see [@ilia-kats' comment](https://github.com/lucas-diedrich/mulink/pull/42#discussion_r4654329103)). The axis of a link is therefore implied by the MuData object and is not stored. If mudata introduces a mode in which both axes are non-shared (e.g. `axis=-2`, see [scverse/mudata#111](https://github.com/scverse/mudata/issues/111#issuecomment-4337758099)), a per-link axis field will be added as a backwards-compatible schema addition.
 
@@ -362,7 +382,7 @@ In the planned constraints field (see [Future constraints](#future-constraints))
 The metadata schema is versioned according to the [`SchemVer`](https://snowplow.io/blog/introducing-schemaver-for-semantic-versioning-of-schemas) convention. Every change of the schema results in a new version and unknown versions are rejected.
 | Version | Changes |
 |---|---|
-| `1-0-0` | Initial schema: per-link `semantics`. |
+| `1-0-0` | Initial schema: per-link `semantics` and `constraints`. |
 
 ##### Links
 Links are stored as named entries in the `links` dictionary (see [@ilan-gold's comment](https://github.com/lucas-diedrich/mulink/issues/23#issuecomment-4500259184)).
@@ -382,13 +402,31 @@ mdata.uns
         "version": "1-0-0",
         "links": {
             "feature_mapping_1": {
-                "semantics": "aggregates_to"
+                "semantics": "aggregates_to",
+                "constraints": {
+                    "max_outgoing_edges": None,
+                    "max_incoming_edges": None,
+                    "allow_isolated_features": True,
+                    "allowed_targets": {"peptides": ["proteins"]},
+                },
             },
             "feature_mapping_2": {
-                "semantics": None
+                "semantics": None,
+                "constraints": {
+                    "max_outgoing_edges": None,
+                    "max_incoming_edges": None,
+                    "allow_isolated_features": True,
+                    "allowed_targets": None,
+                },
             },
             "feature_mapping_3": {
-                "semantics": "maps_to"
+                "semantics": "maps_to",
+                "constraints": {
+                    "max_outgoing_edges": 1,
+                    "max_incoming_edges": None,
+                    "allow_isolated_features": False,
+                    "allowed_targets": None,
+                },
             },
         }
     }

@@ -235,3 +235,33 @@ class TestQueryAncestors:
 
         with pytest.raises(KeyError, match="missing"):
             simple_mudata.link.query.ancestors(missing_query)
+
+
+class TestQueryObsAxis:
+    """Queries on MuData objects with shared variables (`axis=1`) operate on observations"""
+
+    @pytest.mark.parametrize(
+        ("method", "query", "include_self", "expected_obs"),
+        [
+            ("descendants", "cell_A", True, ["cell_A", "spot_C"]),
+            ("descendants", ["cell_A", "cell_B"], False, ["spot_C", "spot_D"]),
+            ("ancestors", "spot_D", True, ["cell_B", "spot_D"]),
+            ("ancestors", "spot_D", False, ["cell_B"]),
+        ],
+    )
+    def test_query(self, simple_obs_mudata, method, query, include_self, expected_obs) -> None:
+        result = getattr(simple_obs_mudata.link.query, method)(query, include_self=include_self)
+
+        assert isinstance(result, md.MuData)
+        assert result.n_vars == simple_obs_mudata.n_vars
+        assert_array_equal(sorted(result.obs_names), expected_obs)
+
+    @pytest.mark.parametrize(("mods", "expected_obs"), [(["spatial"], ["spot_C"]), (["sc"], ["cell_A"])])
+    def test_restricted_mods(self, simple_obs_mudata, mods, expected_obs) -> None:
+        result = simple_obs_mudata.link.query.descendants("cell_A", include_mods=mods)
+
+        assert_array_equal(sorted(result.obs_names), expected_obs)
+
+    def test_missing_raises_key_error(self, simple_obs_mudata) -> None:
+        with pytest.raises(KeyError, match="missing"):
+            simple_obs_mudata.link.query.descendants("gene_1")

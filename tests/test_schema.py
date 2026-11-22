@@ -3,6 +3,7 @@
 import anndata as ad
 import mudata as md
 import numpy as np
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 from scipy.sparse import csr_matrix
@@ -92,6 +93,18 @@ class TestMuLinkSchema:
 
     def test_validate_pkeys_exist__succeeds(self, schema, mdata_with_varp) -> None:
         schema.validate_pkeys_exist(mdata_with_varp)
+
+    def test_validate_pkeys_exist__obs_axis(self) -> None:
+        mods = {
+            mod: ad.AnnData(X=np.zeros((2, 3)), obs=pd.DataFrame(index=[f"{mod}-0", f"{mod}-1"]))
+            for mod in ("mod1", "mod2")
+        }
+        mdata = md.MuData(mods, axis=1)
+        mdata.obsp["feature_mapping"] = csr_matrix(np.zeros((mdata.n_obs, mdata.n_obs)))
+        schema = MuLinkSchema(links={"feature_mapping": LinkSchema(), "missing_key": LinkSchema()})
+
+        with pytest.raises(KeyError, match=r"missing_key.*mdata\.obsp"):
+            schema.validate_pkeys_exist(mdata)
 
     def test_validate_pkeys_exist__fails_missing_pkey(self, mdata_with_varp) -> None:
         schema = MuLinkSchema(links={"missing_key": LinkSchema()})

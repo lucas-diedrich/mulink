@@ -39,13 +39,13 @@ def test__generate_dag(
     assert n_nodes_per_level == expected_nodes_per_level
 
 
-@pytest.mark.parametrize("varp_key", ["feature_mapping", "test"])
+@pytest.mark.parametrize("key", ["feature_mapping", "test"])
 @pytest.mark.parametrize("n_obs", [5])
 @pytest.mark.parametrize("min_edges", [1, 2, 3])
 @pytest.mark.parametrize("n_vertices", [1, 3, 10])
 @pytest.mark.parametrize("n_mod", [1, 3])
-def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs: int, varp_key: str) -> None:
-    mdata = hierarchical_mudata(n_mod=n_mod, n_vertices=n_vertices, min_edges=min_edges, varp_key=varp_key)
+def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs: int, key: str) -> None:
+    mdata = hierarchical_mudata(n_mod=n_mod, n_obs=n_obs, n_vertices=n_vertices, min_edges=min_edges, key=key)
 
     expected_modality_names = {f"mod{idx}" for idx in range(n_mod)}
     expected_n_vars = sum(n_vertices * min_edges**mod for mod in range(n_mod))
@@ -53,7 +53,27 @@ def test_hierarchical_mudata(n_mod: int, n_vertices: int, min_edges: int, n_obs:
     assert isinstance(mdata, md.MuData)
     assert set(mdata.mod.keys()) == expected_modality_names
     assert mdata.shape == (n_obs, expected_n_vars)
-    assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.varp[varp_key], create_using=nx.DiGraph))
+    assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.varp[key], create_using=nx.DiGraph))
+
+
+@pytest.mark.parametrize("n_var", [1, 4])
+@pytest.mark.parametrize("n_mod", [1, 3])
+def test_hierarchical_mudata__obs_axis(n_mod: int, n_var: int) -> None:
+    mdata = hierarchical_mudata(n_mod=n_mod, axis=1, n_var=n_var, n_vertices=2, min_edges=2, key="obs_mapping")
+
+    expected_n_obs = sum(2 * 2**mod for mod in range(n_mod))
+
+    assert mdata.axis == 1
+    assert mdata.shape == (expected_n_obs, n_var)
+    assert "obs_mapping" in mdata.obsp
+    assert "obs_mapping" not in mdata.varp
+    assert nx.is_directed_acyclic_graph(nx.from_scipy_sparse_array(mdata.obsp["obs_mapping"], create_using=nx.DiGraph))
+
+
+@pytest.mark.parametrize("axis", [-1, 2])
+def test_hierarchical_mudata__unsupported_axis_raises(axis: int) -> None:
+    with pytest.raises(ValueError, match="axis"):
+        hierarchical_mudata(n_mod=2, axis=axis)
 
 
 @pytest.mark.parametrize(("n_mod", "extra_edge_levels"), [(1, [1]), (3, [3, 2]), (3, [3])])

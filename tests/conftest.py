@@ -44,6 +44,42 @@ def simple_mudata() -> md.MuData:
 
 
 @pytest.fixture
+def simple_obs_mudata() -> md.MuData:
+    """2-modality MuData with shared variables (`axis=1`) and 1:1 observation mapping: cell_A -> spot_C, cell_B -> spot_D"""
+    sc = ad.AnnData(np.array([[1, 2], [3, 4]]))
+    sc.obs_names = ["cell_A", "cell_B"]
+    sc.var_names = ["gene_1", "gene_2"]
+
+    spatial = ad.AnnData(np.array([[5, 6], [7, 8]]))
+    spatial.obs_names = ["spot_C", "spot_D"]
+    spatial.var_names = ["gene_1", "gene_2"]
+
+    mdata = md.MuData({"sc": sc, "spatial": spatial}, axis=1)
+    # obs_names: [cell_A, cell_B, spot_C, spot_D]
+    adj = csr_array(
+        np.array(
+            [
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+            ]
+        )
+    )
+
+    mlink = mulink.basic.MuLink(mdata)
+    mlink.add_link(adj, key="feature_mapping")
+
+    return mlink._obj
+
+
+@pytest.fixture(params=["simple_mudata", "simple_obs_mudata"], ids=("axis0", "axis1"))
+def simple_mudata_any_axis(request) -> md.MuData:
+    """`simple_mudata` (links on `.var`) and `simple_obs_mudata` (links on `.obs`)"""
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture
 def n_to_m_mudata() -> md.MuData:
     """2-modality MuData with N:M mapping: gene_A -> prot_C, gene_A -> prot_D, gene_B -> prot_D"""
     gene = ad.AnnData(

@@ -124,14 +124,24 @@ class MuLink:
 
     @property
     def query(self):
-        """Querying functionality"""
+        """Querying functionality
+
+        See Also
+        --------
+        :class:`mulink.plotting.QueryAccessor`
+        """
         from .query import QueryAccessor
 
         return QueryAccessor(self)
 
     @property
     def pl(self):
-        """Plotting functionality"""
+        """Plotting functionality
+
+        See Also
+        --------
+        :class:`mulink.plotting.PlotAccessor`
+        """
         from .plotting import PlotAccessor
 
         return PlotAccessor(self)

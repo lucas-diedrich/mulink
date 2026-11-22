@@ -1,6 +1,6 @@
 """Main entrypoint for mulink"""
 
-from collections.abc import KeysView
+from collections.abc import Iterable, KeysView
 
 import mudata as md
 import pandas as pd
@@ -8,6 +8,7 @@ from mudata import register_mudata_namespace
 from scipy.sparse import csr_array
 
 from mulink.schema import LinkSchema, MuLinkSchema
+from mulink.validate import validate_link
 
 _MULINK_SUPPORTED_AXES = (0,)
 """Supported axis of mudata objects"""
@@ -26,7 +27,9 @@ class MuLink:
     def __init__(self, mdata: md.MuData) -> None:
         self._obj = mdata
 
-    def add_link(self, link: csr_array, *, key: str = "feature_mapping", **link_properties) -> None:
+    def add_link(
+        self, link: csr_array, *, key: str = "feature_mapping", validate: bool = True, **link_properties
+    ) -> None:
         """Add a feature link to mudata
 
         Parameters
@@ -35,14 +38,25 @@ class MuLink:
             Adjacency matrix defining the link graph
         key
             Name of slot in `mudata.varp`.
+        validate
+            Whether to validate the link graph before adding it, see :meth:`validate`.
         link_properties
             Annotation of link.
             Passed to :class:`mulink.schema.LinkSchema` and added to `mdata.uns["mulink"]`
+
+        Raises
+        ------
+        mulink.validate.LinkValidationError
+            If `validate` is `True` and the link graph is invalid. The object is not modified.
         """
         if self._obj.axis not in (_MULINK_SUPPORTED_AXES):
             raise NotImplementedError(f"Shared axis {self._obj.axis} in mudata object is not supported.")
 
         annotation = LinkSchema(**link_properties)
+        link = csr_array(link)
+
+        if validate:
+            validate_link(link, self._obj.varmap, annotation.constraints)
 
         if self._obj.uns.get(MuLinkSchema._MULINK_KEY) is None:
             schema = MuLinkSchema(links={key: annotation})
@@ -50,7 +64,7 @@ class MuLink:
             schema = MuLinkSchema.from_mudata(self._obj)
             schema.add_link(key=key, link=annotation)
 
-        self._obj.varp[key] = csr_array(link)
+        self._obj.varp[key] = link
         schema.to_mudata(mdata=self._obj)
 
     def link(self, key: str | None = None) -> pd.DataFrame:
@@ -122,9 +136,21 @@ class MuLink:
 
         return PlotAccessor(self)
 
-    @property
-    def validate(self):
-        """Validate graph properties"""
-        from .validate import GraphValidator
+    def validate(self, keys: str | Iterable[str] | None = None) -> None:
+        """Validate links against the structural rules of the format and their stored constraints
 
-        return GraphValidator(self)
+        Parameters
+        ----------
+        keys
+            Names of the links to validate. Defaults to all links.
+
+        Raises
+        ------
+        mulink.validate.LinkValidationError
+            If a link graph is invalid. The subclass indicates the violated property.
+        """
+        schema = MuLinkSchema.from_mudata(self._obj)
+        keys = schema.keys() if keys is None else [keys] if isinstance(keys, str) else keys
+
+        for key in keys:
+            validate_link(self._obj.varp[key], self._obj.varmap, schema[key].constraints)

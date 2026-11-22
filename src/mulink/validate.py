@@ -38,7 +38,7 @@ def feature_modalities(varmap: Mapping[str, np.ndarray]) -> np.ndarray:
     Parameters
     ----------
     varmap
-        Mapping from modality name to its feature map, as in `mdata.varmap`.
+        Mapping from modality name to its feature map, as in `mdata.varmap` (or `mdata.obsmap` for `mdata.axis == 1`).
 
     Returns
     -------
@@ -196,7 +196,7 @@ def validate_link(
     adjacency
         Adjacency matrix of the link graph.
     varmap
-        Mapping from modality name to its feature map, as in `mdata.varmap`.
+        Mapping from modality name to its feature map, as in `mdata.varmap` (or `mdata.obsmap` for `mdata.axis == 1`).
     constraints
         Optional constraints. Acyclicity and absence of self-references are always enforced.
 

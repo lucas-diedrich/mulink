@@ -5,4 +5,5 @@
 
 notebooks/example
 notebooks/protein-data
+notebooks/obs-links
 ```

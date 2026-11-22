@@ -42,6 +42,7 @@ class LinkSchema(BaseModel):
     """Metadata of a single link"""
 
     semantics: str | None = Field(None, description="Semantic meaning of link.")
+    graph_constraints: list[str] | None = Field(None, description="Constraints on graph")
 
 
 class MuLinkSchema(BaseModel):
@@ -50,7 +51,7 @@ class MuLinkSchema(BaseModel):
     Supports dict-style access to links by name: `schema.keys()`, `schema[key]` and `key in schema`.
     """
 
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "allow"}
 
     _MULINK_KEY: ClassVar = "mulink"
 

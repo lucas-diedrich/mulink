@@ -121,3 +121,10 @@ class MuLink:
         from .plotting import PlotAccessor
 
         return PlotAccessor(self)
+
+    @property
+    def validate(self):
+        """Validate graph properties"""
+        from .validate import GraphValidator
+
+        return GraphValidator(self)
